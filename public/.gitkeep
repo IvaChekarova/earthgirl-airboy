@@ -1,0 +1,2 @@
+Files placed in public/ are served at the site root and copied as-is into the
+build. Use it for favicons or any asset you want referenced by an absolute URL.

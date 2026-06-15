@@ -1,0 +1,26 @@
+{
+  "name": "earthgirl-airboy",
+  "version": "1.0.0",
+  "description": "Earthgirl & Airboy — a 2D cooperative puzzle platformer built with Phaser 3 and Vite.",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "keywords": [
+    "phaser",
+    "phaser3",
+    "game",
+    "platformer",
+    "co-op"
+  ],
+  "author": "Earthgirl & Airboy Team",
+  "license": "MIT",
+  "dependencies": {
+    "phaser": "^3.80.1"
+  },
+  "devDependencies": {
+    "vite": "^5.4.8"
+  }
+}

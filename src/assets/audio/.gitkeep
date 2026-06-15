@@ -1,0 +1,2 @@
+# Drop sound effects and music (MP3/OGG/WAV) here.
+# Load them in a scene's preload() and play with this.sound.play('key').

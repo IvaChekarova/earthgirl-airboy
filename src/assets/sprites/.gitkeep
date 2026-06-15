@@ -1,0 +1,2 @@
+# Drop sprite sheets / texture atlases here.
+# Load with this.load.spritesheet(...) or this.load.atlas(...) in preload().
