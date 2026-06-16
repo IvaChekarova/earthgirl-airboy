@@ -13,7 +13,14 @@ export const EVENTS = {
   CRYSTAL_COLLECTED: 'crystal-collected',
   PLAYER_AT_DOOR: 'player-at-door',
   LEVEL_COMPLETE: 'level-complete',
-  SHOW_MESSAGE: 'show-message'
+  SHOW_MESSAGE: 'show-message',
+  SHOW_INTRO: 'show-intro',
+
+  // Navigation requests emitted by the UI (win screen / HUD buttons) and
+  // handled by the active level scene, which owns scene transitions.
+  NAV_RESTART: 'nav-restart',
+  NAV_NEXT: 'nav-next',
+  NAV_MENU: 'nav-menu'
 };
 
 // A single shared EventEmitter instance for the whole app.

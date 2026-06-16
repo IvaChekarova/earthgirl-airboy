@@ -4,6 +4,7 @@
 
 import Phaser from 'phaser';
 import { TEX } from '../utils/textures.js';
+import { playSfx, SFX } from '../utils/audio.js';
 
 export default class Button extends Phaser.Physics.Arcade.Sprite {
   /**
@@ -44,6 +45,7 @@ export default class Button extends Phaser.Physics.Arcade.Sprite {
     if (nowPressed !== this.pressed) {
       this.pressed = nowPressed;
       this.setTexture(nowPressed ? TEX.BUTTON_PRESSED : TEX.BUTTON);
+      if (nowPressed) playSfx(this.scene, SFX.BUTTON);
       this.onChange(nowPressed);
     }
     this._touchedThisFrame = false;

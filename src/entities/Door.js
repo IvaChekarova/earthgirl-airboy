@@ -36,16 +36,39 @@ export default class Door extends Phaser.Physics.Arcade.Sprite {
   }
 
   /**
-   * Visually mark the door as ready (all crystals collected for this element).
+   * Visually mark the door as ready — only happens once the matching character
+   * has collected ALL of their crystals. A pulsing glow draws the eye.
    */
   setReady(ready) {
     if (this.open === ready) return;
     this.open = ready;
-    this.glow.setStrokeStyle(3, this.element === 'air' ? 0x64b5f6 : 0x81c784, ready ? 1 : 0);
-    this.setAlpha(ready ? 1 : 0.65);
+
+    const color = this.element === 'air' ? 0x64b5f6 : 0x81c784;
+    this.setAlpha(ready ? 1 : 0.6);
+
+    if (ready) {
+      this.glow.setStrokeStyle(3, color, 1);
+      // Gentle pulse so "the door is open now" is obvious.
+      this.glowTween = this.scene.tweens.add({
+        targets: this.glow,
+        alpha: { from: 1, to: 0.25 },
+        scale: { from: 1, to: 1.12 },
+        duration: 650,
+        yoyo: true,
+        repeat: -1,
+        ease: 'Sine.easeInOut'
+      });
+    } else {
+      if (this.glowTween) {
+        this.glowTween.stop();
+        this.glowTween = null;
+      }
+      this.glow.setStrokeStyle(3, color, 0).setAlpha(1).setScale(1);
+    }
   }
 
   destroy(fromScene) {
+    if (this.glowTween) this.glowTween.stop();
     if (this.glow) this.glow.destroy();
     super.destroy(fromScene);
   }

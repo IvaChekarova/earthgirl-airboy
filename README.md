@@ -28,6 +28,22 @@ level is complete when **both** characters stand in their open doors at the same
 time. Stand on **buttons** to activate **moving platforms** and help each other
 reach high places.
 
+### Level 1 walkthrough ("Earth Gate")
+
+A true two-player puzzle — neither character can finish alone:
+
+1. **Earthgirl** stands on **Button A** (left) → the **gate** in the middle opens.
+2. **Airboy** walks through the open gate and stands on **Button B** (right) →
+   a **lift** rises on the left (only while he holds the button).
+3. **Earthgirl** rides the lift up to her exit ledge, steps onto solid ground
+   and grabs her last green crystal.
+4. **Airboy** climbs the steps to his own exit ledge.
+5. With all 6 crystals collected, **both** stand in their exit gates → 🎉 **Win
+   screen** with **Next Level / Restart / Menu** buttons.
+
+The crystal counter (top of the screen) tracks each character's progress, and a
+**Restart** button is always available in the HUD (or press `R`).
+
 ---
 
 ## 🚀 Getting Started
@@ -78,9 +94,10 @@ earthgirl-airboy/
     │   ├── Earthgirl.js      # WASD character
     │   ├── Airboy.js         # arrow-key character
     │   ├── Crystal.js        # collectible (earth/air)
-    │   ├── Door.js           # exit door (earth/air)
+    │   ├── Door.js           # exit gate (earth/air)
     │   ├── Button.js         # pressure plate
-    │   └── MovingPlatform.js # patrolling / button-driven platform
+    │   ├── Gate.js           # blocking wall opened by a button
+    │   └── MovingPlatform.js # patrol or button-driven 'lift'
     ├── utils/
     │   ├── textures.js       # runtime placeholder-texture generator
     │   └── events.js         # global event bus (gameplay → UI)
@@ -135,6 +152,22 @@ copying Level 1's `buildLevel()` and rearranging objects — no engine code need
 5. Point the previous level's `next` to your new scene key.
 
 ---
+
+## 🔊 Adding Sound Effects
+
+The game has **sound placeholder hooks** already wired for `jump`, `crystal`,
+`button`, `gate` and `win` (see [src/utils/audio.js](src/utils/audio.js)). They
+are silent no-ops until you provide audio. To enable a sound:
+
+1. Drop a clip in `src/assets/audio/` (e.g. `jump.mp3`).
+2. Load it in a scene's `preload()` using the matching key from `SFX`:
+   ```js
+   import { SFX } from '../utils/audio.js';
+   preload() { this.load.audio(SFX.JUMP, 'src/assets/audio/jump.mp3'); }
+   ```
+
+Every existing `playSfx(scene, SFX.JUMP)` call will then play it automatically —
+no other code changes needed.
 
 ## 📦 Tech Stack
 

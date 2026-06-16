@@ -57,6 +57,8 @@ export default class Crystal extends Phaser.Physics.Arcade.Sprite {
     if (this.collected) return false;
     this.collected = true;
 
+    this.spawnBurst();
+
     this.scene.tweens.add({
       targets: this,
       scale: 0,
@@ -67,5 +69,22 @@ export default class Crystal extends Phaser.Physics.Arcade.Sprite {
     });
 
     return true;
+  }
+
+  /** A small sparkle burst in the crystal's colour when picked up. */
+  spawnBurst() {
+    const tint = this.element === 'air' ? 0x64b5f6 : 0x66bb6a;
+    const emitter = this.scene.add.particles(this.x, this.y, TEX.PIXEL, {
+      lifespan: 420,
+      speed: { min: 40, max: 130 },
+      angle: { min: 0, max: 360 },
+      scale: { start: 5, end: 0 },
+      alpha: { start: 1, end: 0 },
+      tint,
+      emitting: false
+    });
+    emitter.setDepth(8);
+    emitter.explode(14);
+    this.scene.time.delayedCall(500, () => emitter.destroy());
   }
 }

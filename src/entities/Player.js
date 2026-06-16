@@ -4,6 +4,7 @@
 
 import Phaser from 'phaser';
 import { PLAYER } from '../config/gameConfig.js';
+import { playSfx, SFX } from '../utils/audio.js';
 
 export default class Player extends Phaser.Physics.Arcade.Sprite {
   /**
@@ -62,6 +63,7 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
     // Jump — only when standing on something.
     if (Phaser.Input.Keyboard.JustDown(up) && onGround) {
       this.setVelocityY(PLAYER.JUMP_VELOCITY);
+      playSfx(this.scene, SFX.JUMP);
     }
 
     // Keep the floating name tag glued to the character.
