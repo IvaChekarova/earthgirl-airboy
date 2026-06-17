@@ -24,13 +24,6 @@ import Gate from '../entities/Gate.js';
 import MovingPlatform from '../entities/MovingPlatform.js';
 
 export default class BaseLevelScene extends Phaser.Scene {
-  /**
-   * @param {object} meta
-   * @param {string} meta.key        scene key
-   * @param {number} meta.number     level number (1-3)
-   * @param {string} meta.name       display name ("Earth Gate")
-   * @param {string|null} meta.next  next scene key, or null if last
-   */
   constructor(meta) {
     super(meta.key);
     this.meta = meta;
@@ -52,12 +45,10 @@ export default class BaseLevelScene extends Phaser.Scene {
     stopMusic(this, MUSIC.MENU);
     playMusic(this, MUSIC.LEVEL, { volume: 0.28 });
 
-    // 1. Runtime textures and reference-image character crops.
     generatePlaceholderTextures(this);
     generateCharacterTextures(this);
     registerCharacterAnimations(this);
 
-    // 2. Physics groups shared by every level.
     this.platforms = this.physics.add.staticGroup();
     this.movingPlatforms = this.physics.add.group({ allowGravity: false, immovable: true });
     this.earthCrystals = this.physics.add.group({ allowGravity: false });
@@ -67,23 +58,18 @@ export default class BaseLevelScene extends Phaser.Scene {
     this.hazards = [];
     this.doors = {};
 
-    // Track how many crystals each character still needs.
     this.crystalTotals = { earth: 0, air: 0 };
     this.crystalCollected = { earth: 0, air: 0 };
 
-    // 3. World + camera bounds.
     this.physics.world.setBounds(0, 0, this.levelWidth, this.levelHeight);
     this.cameras.main.setBounds(0, 0, this.levelWidth, this.levelHeight);
     this.addTempleBackdrop();
 
-    // 4. Subclass builds the actual layout (sets spawn points too).
     this.buildLevel();
 
-    // 5. Players. Subclass must define earthSpawn / airSpawn.
     this.earthgirl = new Earthgirl(this, this.earthSpawn.x, this.earthSpawn.y);
     this.airboy = new Airboy(this, this.airSpawn.x, this.airSpawn.y);
 
-    // Remember where each character starts so a hazard can respawn just them.
     this.earthgirl.spawnPoint = { ...this.earthSpawn };
     this.airboy.spawnPoint = { ...this.airSpawn };
     this.players = [this.earthgirl, this.airboy];
@@ -91,27 +77,26 @@ export default class BaseLevelScene extends Phaser.Scene {
     this.setupCollisions();
     this.setupCamera();
 
-    // 6. Launch / refresh the UI overlay and announce the level.
-    if (!this.scene.isActive('UIScene')) {
-      this.scene.launch('UIScene');
-    }
-
-    gameEvents.emit(EVENTS.LEVEL_STARTED, {
+    // 6. Launch / refresh the UI overlay and announce the correct level.
+    const levelData = {
       key: this.meta.key,
       number: this.meta.number,
       name: this.meta.name,
       next: this.meta.next,
       totals: { ...this.crystalTotals }
-    });
+    };
+
+    if (!this.scene.isActive('UIScene')) {
+      this.scene.launch('UIScene', levelData);
+    } else {
+      gameEvents.emit(EVENTS.LEVEL_STARTED, levelData);
+    }
 
     this.emitCrystalUpdate();
 
-    // Restart / menu hotkeys available in every level.
     this.input.keyboard.on('keydown-R', () => this.scene.restart());
     this.input.keyboard.on('keydown-ESC', () => this.goToMenu());
 
-    // Navigation requests from the UI (win screen / HUD buttons). The active
-    // level owns scene transitions, so the UI just emits and we react here.
     this.navHandlers = {
       [EVENTS.NAV_RESTART]: () => this.scene.restart(),
       [EVENTS.NAV_NEXT]: () => this.goToNext(),
@@ -157,11 +142,6 @@ export default class BaseLevelScene extends Phaser.Scene {
       .setAlpha(1);
   }
 
-  // -------------------------------------------------------------------------
-  // Builder helpers used by subclasses
-  // -------------------------------------------------------------------------
-
-  /** Add a static platform. Width/height default to a single tile. */
   addPlatform(x, y, width = 120, height = 24, texture = TEX.PLATFORM) {
     const art = this.getTempleArt();
     const visualTexture = texture === TEX.GROUND ? art.ground : art.platform;
@@ -190,7 +170,6 @@ export default class BaseLevelScene extends Phaser.Scene {
     return plat;
   }
 
-  /** Convenience: a full-width ground strip along the bottom. */
   addGround(y = this.levelHeight - 20, width = this.levelWidth) {
     return this.addPlatform(width / 2, y, width, 40, TEX.GROUND);
   }
@@ -229,14 +208,9 @@ export default class BaseLevelScene extends Phaser.Scene {
     return platform;
   }
 
-  /**
-   * A lava danger zone. Whichever character touches it respawns at their own
-   * spawn point; level state and the other player's progress are preserved.
-   */
   addHazard(x, y, width, height) {
     const visual = this.makeLavaVisual(x, y, width, height);
 
-    // Invisible static sensor body used for the overlap test.
     const zone = this.add.zone(x, y, width, height);
     this.physics.add.existing(zone, true);
     zone.hazardVisual = visual;
@@ -245,7 +219,6 @@ export default class BaseLevelScene extends Phaser.Scene {
     return zone;
   }
 
-  /** Animated lava using the reference-sheet lava strip. */
   makeLavaVisual(x, y, width, height) {
     const c = this.add.container(x, y).setDepth(1);
     const visualWidth = width;
@@ -294,42 +267,30 @@ export default class BaseLevelScene extends Phaser.Scene {
     return c;
   }
 
-  // -------------------------------------------------------------------------
-  // Collisions & camera
-  // -------------------------------------------------------------------------
-
   setupCollisions() {
     this.players.forEach((player) => {
       this.physics.add.collider(player, this.platforms);
       this.physics.add.collider(player, this.movingPlatforms);
 
-      // Closed gates block passage; an opened gate disables its body so the
-      // collider simply lets the character through.
       this.gateList.forEach((gate) => this.physics.add.collider(player, gate));
     });
 
-    // Crystals: only the matching character can collect.
     this.physics.add.overlap(this.earthgirl, this.earthCrystals, this.handleCrystal, null, this);
     this.physics.add.overlap(this.airboy, this.airCrystals, this.handleCrystal, null, this);
 
-    // Buttons: any player can press them.
     this.buttons.forEach((button) => {
       this.players.forEach((player) => {
         this.physics.add.overlap(player, button, () => button.markTouched());
       });
     });
 
-    // Hazards: touching one respawns only the offending character.
     this.hazards.forEach((zone) => {
       this.players.forEach((player) => {
         this.physics.add.overlap(player, zone, () => this.respawnPlayer(player));
       });
     });
-
-    // Doors: track overlap each frame via the update loop (see checkDoors()).
   }
 
-  /** Send a single character back to its spawn point (keeps its crystals). */
   respawnPlayer(player) {
     if (player._respawning) return;
     player._respawning = true;
@@ -340,7 +301,6 @@ export default class BaseLevelScene extends Phaser.Scene {
     player.setVelocity(0, 0);
     player.setPosition(player.spawnPoint.x, player.spawnPoint.y);
 
-    // Quick blink so the player notices what happened.
     this.tweens.add({
       targets: player,
       alpha: { from: 0.2, to: 1 },
@@ -354,18 +314,11 @@ export default class BaseLevelScene extends Phaser.Scene {
 
   setupCamera() {
     const cam = this.cameras.main;
-
-    // Show the WHOLE level at once — no scrolling. If the level is larger than
-    // the viewport we zoom out to fit it; we never zoom in past 1:1.
     const zoom = Math.min(1, this.scale.width / this.levelWidth, this.scale.height / this.levelHeight);
 
     cam.setZoom(zoom);
     cam.centerOn(this.levelWidth / 2, this.levelHeight / 2);
   }
-
-  // -------------------------------------------------------------------------
-  // Crystal / door logic
-  // -------------------------------------------------------------------------
 
   handleCrystal(player, crystal) {
     if (crystal.collect()) {
@@ -389,7 +342,6 @@ export default class BaseLevelScene extends Phaser.Scene {
     });
   }
 
-  /** Returns true when the given element has all its crystals. */
   elementReady(element) {
     return this.crystalCollected[element] >= this.crystalTotals[element];
   }
@@ -432,7 +384,6 @@ export default class BaseLevelScene extends Phaser.Scene {
   completeLevel() {
     this.completed = true;
 
-    // Freeze the players.
     this.players.forEach((p) => {
       p.stopStepSound?.();
       p.setVelocity(0, 0);
@@ -440,8 +391,6 @@ export default class BaseLevelScene extends Phaser.Scene {
       p.setActive(false);
     });
 
-    // Celebratory flash, then let the UI show the win screen. The player
-    // chooses Next / Restart / Menu there (handled via NAV_* events).
     playSfx(this, SFX.WIN);
     this.cameras.main.flash(400, 255, 255, 255);
 
@@ -453,16 +402,10 @@ export default class BaseLevelScene extends Phaser.Scene {
     });
   }
 
-  // -------------------------------------------------------------------------
-  // Main loop
-  // -------------------------------------------------------------------------
-
   update() {
     if (this.completed) return;
 
     this.players.forEach((player) => player.update());
-
-    // Resolve button states once per frame.
     this.buttons.forEach((button) => button.refresh());
 
     this.checkDoors();

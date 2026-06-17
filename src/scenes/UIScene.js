@@ -13,37 +13,52 @@ export default class UIScene extends Phaser.Scene {
     super({ key: 'UIScene', active: false });
   }
 
-  create() {
+  create(data = {}) {
     const { width } = this.scale;
-    this.hasNext = false;
+    const initialLevel = data && data.number && data.name ? data : null;
+    this.hasNext = !!initialLevel?.next;
 
     // ---- Top HUD bar ----
     this.add.tileSprite(width / 2, 22, width, 44, TEX.WALL_MOSS).setAlpha(0.75).setScrollFactor(0);
     this.add.rectangle(0, 42, width, 3, 0x9bd44d, 0.65).setOrigin(0).setScrollFactor(0);
 
     this.levelText = this.add
-      .text(16, 12, 'Level 1 — Earth Gate', {
-        fontFamily: 'monospace',
-        fontSize: '18px',
-        color: '#ffffff'
-      })
+      .text(
+        16,
+        12,
+        initialLevel ? `Level ${initialLevel.number} — ${initialLevel.name}` : 'Level 1 — Earth Gate',
+        {
+          fontFamily: 'monospace',
+          fontSize: '18px',
+          color: '#ffffff'
+        }
+      )
       .setScrollFactor(0);
 
-    // Crystal counter (per character + total).
     this.add
       .image(width / 2 - 132, 22, 'tex-crystal-earth')
       .setScrollFactor(0)
       .setScale(0.7);
+
     this.earthCount = this.add
-      .text(width / 2 - 116, 12, '0/0', { fontFamily: 'monospace', fontSize: '18px', color: '#a5d6a7' })
+      .text(width / 2 - 116, 12, '0/0', {
+        fontFamily: 'monospace',
+        fontSize: '18px',
+        color: '#a5d6a7'
+      })
       .setScrollFactor(0);
 
     this.add
       .image(width / 2 - 16, 22, 'tex-crystal-air')
       .setScrollFactor(0)
       .setScale(0.7);
+
     this.airCount = this.add
-      .text(width / 2, 12, '0/0', { fontFamily: 'monospace', fontSize: '18px', color: '#90caf9' })
+      .text(width / 2, 12, '0/0', {
+        fontFamily: 'monospace',
+        fontSize: '18px',
+        color: '#90caf9'
+      })
       .setScrollFactor(0);
 
     this.totalText = this.add
@@ -54,7 +69,6 @@ export default class UIScene extends Phaser.Scene {
       })
       .setScrollFactor(0);
 
-    // Always-available Restart button on the HUD.
     this.restartButton = this.makeButton(
       width - 70,
       22,
@@ -65,7 +79,6 @@ export default class UIScene extends Phaser.Scene {
       () => gameEvents.emit(EVENTS.NAV_RESTART)
     );
 
-    // Transient centre message (e.g. "Level 1 — Earth Gate").
     this.message = this.add
       .text(width / 2, 86, '', {
         fontFamily: 'monospace',
@@ -81,12 +94,24 @@ export default class UIScene extends Phaser.Scene {
     this.buildWinScreen();
     this.bindEvents();
 
+    if (initialLevel) {
+      this._onLevelStarted(initialLevel);
+
+      const earthTotal = initialLevel.totals?.earth ?? 0;
+      const airTotal = initialLevel.totals?.air ?? 0;
+
+      this._onCrystal({
+        collected: 0,
+        total: earthTotal + airTotal,
+        perElement: {
+          earth: { got: 0, total: earthTotal },
+          air: { got: 0, total: airTotal }
+        }
+      });
+    }
+
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.unbindEvents());
   }
-
-  // -------------------------------------------------------------------------
-  // Event wiring
-  // -------------------------------------------------------------------------
 
   bindEvents() {
     this._onLevelStarted = (data) => {
@@ -99,6 +124,7 @@ export default class UIScene extends Phaser.Scene {
     this._onCrystal = (data) => {
       const e = data.perElement.earth;
       const a = data.perElement.air;
+
       this.earthCount.setText(`${e.got}/${e.total}`);
       this.airCount.setText(`${a.got}/${a.total}`);
       this.totalText.setText(`Total ${data.collected}/${data.total}`);
@@ -126,10 +152,6 @@ export default class UIScene extends Phaser.Scene {
     gameEvents.off(EVENTS.SHOW_MESSAGE, this._onMessage);
     gameEvents.off(EVENTS.SHOW_INTRO, this._onIntro);
   }
-
-  // -------------------------------------------------------------------------
-  // Start-of-level instruction overlay
-  // -------------------------------------------------------------------------
 
   showIntro(text) {
     const { width, height } = this.scale;
@@ -164,7 +186,6 @@ export default class UIScene extends Phaser.Scene {
     panel.add([dim, box, frame, body, hint]);
     this.introPanel = panel;
 
-    // Dismiss on input, or auto-dismiss after a few seconds.
     const dismiss = () => this.hideIntro();
     this.input.keyboard.once('keydown', dismiss);
     this.input.once('pointerdown', dismiss);
@@ -176,9 +197,11 @@ export default class UIScene extends Phaser.Scene {
       this.introTimer.remove(false);
       this.introTimer = null;
     }
+
     if (this.introPanel) {
       const panel = this.introPanel;
       this.introPanel = null;
+
       this.tweens.add({
         targets: panel,
         alpha: 0,
@@ -187,10 +210,6 @@ export default class UIScene extends Phaser.Scene {
       });
     }
   }
-
-  // -------------------------------------------------------------------------
-  // Win screen
-  // -------------------------------------------------------------------------
 
   buildWinScreen() {
     const { width, height } = this.scale;
@@ -221,16 +240,12 @@ export default class UIScene extends Phaser.Scene {
       .setOrigin(0.5);
 
     this.winScreen.add([dim, panel, frame, this.winTitle, this.winSubtitle]);
-
-    // Buttons are (re)built when the screen is shown, because the set depends
-    // on whether a next level exists.
     this.winButtons = [];
   }
 
   showWinScreen(data) {
     const { width, height } = this.scale;
 
-    // Clear any previous buttons.
     this.winButtons.forEach((b) => b.destroy());
     this.winButtons = [];
 
@@ -239,11 +254,12 @@ export default class UIScene extends Phaser.Scene {
     );
 
     const actions = [];
+
     if (data.next) actions.push(['NEXT LEVEL', COLORS.EARTHGIRL, () => gameEvents.emit(EVENTS.NAV_NEXT)]);
+
     actions.push(['RESTART', COLORS.AIRBOY, () => gameEvents.emit(EVENTS.NAV_RESTART)]);
     actions.push(['MENU', COLORS.BUTTON, () => gameEvents.emit(EVENTS.NAV_MENU)]);
 
-    // Lay the buttons out in a centred row.
     const bw = 150;
     const gap = 16;
     const totalW = actions.length * bw + (actions.length - 1) * gap;
@@ -265,15 +281,11 @@ export default class UIScene extends Phaser.Scene {
     if (this.winScreen) this.winScreen.setVisible(false);
   }
 
-  // -------------------------------------------------------------------------
-  // Helpers
-  // -------------------------------------------------------------------------
-
-  /** Build a reusable rectangular button as a container. */
   makeButton(x, y, label, w, h, color, onClick) {
     const container = this.add.container(x, y).setScrollFactor(0);
     const bg = this.add.tileSprite(0, 0, w, h, TEX.PLATFORM_EARTH).setTint(color);
     const rim = this.add.rectangle(0, 0, w, h, 0x000000, 0).setStrokeStyle(2, 0xf4e27a, 0.7);
+
     const text = this.add
       .text(0, 0, label, {
         fontFamily: 'monospace',
@@ -295,15 +307,18 @@ export default class UIScene extends Phaser.Scene {
       rim.setScale(1.05);
       this.input.setDefaultCursor('pointer');
     });
+
     container.on('pointerout', () => {
       bg.setScale(1);
       rim.setScale(1);
       this.input.setDefaultCursor('default');
     });
+
     container.on('pointerdown', () => {
       bg.setScale(0.95);
       rim.setScale(0.95);
     });
+
     container.on('pointerup', () => {
       bg.setScale(1.05);
       rim.setScale(1.05);
@@ -316,6 +331,7 @@ export default class UIScene extends Phaser.Scene {
   flashMessage(text, duration = 1400, color = '#ffffff') {
     this.message.setText(text).setColor(color).setAlpha(1);
     this.tweens.killTweensOf(this.message);
+
     this.tweens.add({
       targets: this.message,
       alpha: 0,
