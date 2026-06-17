@@ -83,10 +83,10 @@ export default class Level3Scene extends BaseLevelScene {
     // --- Shared buttons (AIRBOY's role, all HELD → snap back on release) ---
     // B: lives UP on the ledge — Airboy climbs the pillar, then holds it here to
     //    open Wall W1 so Earthgirl can walk through below.
-    this.addButton(350, 320, (pressed) => wall1.setOpen(pressed));
+    this.addButton(350, 320, (pressed) => wall1.setOpen(pressed), TEX.BUTTON_AIR);
     // D: raises the stepping pillar so Earthgirl can hop across the lava.
     // (kept clear to the right of the earth-exit door)
-    this.addButton(740, 500, (pressed) => pMid.setRaised(pressed));
+    this.addButton(740, 500, (pressed) => pMid.setRaised(pressed), TEX.BUTTON_AIR);
 
     // --- Crystals: GREEN on Earthgirl's route, BLUE on Airboy's -----------
     this.addCrystal(110, 466, 'earth'); // g1  start floor
@@ -101,8 +101,6 @@ export default class Level3Scene extends BaseLevelScene {
     this.addDoor(640, 468, 'earth'); // floor, right side
     this.addDoor(700, 288, 'air'); //   on AP (only reachable after Switch E)
 
-    this.addLabels();
-    this.showIntro('Earthgirl controls the temple.\nUse the earth mechanisms to guide both heroes.');
   }
 
   // -------------------------------------------------------------------------
@@ -139,10 +137,17 @@ export default class Level3Scene extends BaseLevelScene {
   addLava(x, width) {
     // Surface sits a little below the ground line so a formed bridge (top at
     // the ground line, y 500) clearly reads as being ABOVE the lava.
-    const top = 510;
-    const bottom = 562;
-    this.add.rectangle(x, (top + bottom) / 2, width, bottom - top, 0xbf360c, 0.7).setDepth(0);
-    const surface = this.add.rectangle(x, top + 4, width, 6, 0xff7043, 0.95).setDepth(0);
+    const top = 500;
+    const bottom = 546;
+    const lava = this.add.tileSprite(x, (top + bottom) / 2, width, bottom - top, TEX.LAVA).setDepth(0);
+    const surface = this.add.rectangle(x, top + 4, width, 7, 0xffc400, 0.35).setDepth(0);
+    this.tweens.add({
+      targets: lava,
+      tilePositionX: 96,
+      duration: 1800,
+      repeat: -1,
+      ease: 'Linear'
+    });
     this.tweens.add({
       targets: surface,
       alpha: 0.5,
@@ -154,7 +159,8 @@ export default class Level3Scene extends BaseLevelScene {
     });
 
     const sensorTop = 522;
-    const zone = this.add.zone(x, (sensorTop + bottom) / 2, width, bottom - sensorTop);
+    const sensorBottom = 562;
+    const zone = this.add.zone(x, (sensorTop + sensorBottom) / 2, width, sensorBottom - sensorTop);
     this.physics.add.existing(zone, true);
     this.hazards.push(zone);
     return zone;

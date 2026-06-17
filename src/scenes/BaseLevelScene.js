@@ -7,7 +7,7 @@
 // three students can each own one level file without copying boilerplate.
 
 import Phaser from 'phaser';
-import { generatePlaceholderTextures, TEX } from '../utils/textures.js';
+import { generatePlaceholderTextures, getTempleTextures, preloadReferenceAssets, TEX } from '../utils/textures.js';
 import {
   generateCharacterTextures,
   preloadCharacterReference,
@@ -37,6 +37,7 @@ export default class BaseLevelScene extends Phaser.Scene {
   }
 
   preload() {
+    preloadReferenceAssets(this);
     preloadCharacterReference(this);
   }
 
@@ -68,6 +69,7 @@ export default class BaseLevelScene extends Phaser.Scene {
     // 3. World + camera bounds.
     this.physics.world.setBounds(0, 0, this.levelWidth, this.levelHeight);
     this.cameras.main.setBounds(0, 0, this.levelWidth, this.levelHeight);
+    this.addTempleBackdrop();
 
     // 4. Subclass builds the actual layout (sets spawn points too).
     this.buildLevel();
@@ -96,11 +98,6 @@ export default class BaseLevelScene extends Phaser.Scene {
     });
     this.emitCrystalUpdate();
 
-    // Optional one-time instruction overlay (set `intro` in the level's meta).
-    if (this.meta.intro) {
-      gameEvents.emit(EVENTS.SHOW_INTRO, this.meta.intro);
-    }
-
     // Restart / menu hotkeys available in every level.
     this.input.keyboard.on('keydown-R', () => this.scene.restart());
     this.input.keyboard.on('keydown-ESC', () => this.goToMenu());
@@ -128,15 +125,53 @@ export default class BaseLevelScene extends Phaser.Scene {
     this.scene.start('MenuScene');
   }
 
+  getTempleTheme() {
+    if (this.meta.number === 2) return 'wind';
+    if (this.meta.number === 3) return 'root';
+    return 'earth';
+  }
+
+  getTempleArt() {
+    return getTempleTextures(this.getTempleTheme());
+  }
+
+  addTempleBackdrop() {
+    const art = this.getTempleArt();
+
+    this.add.rectangle(0, 0, this.levelWidth, this.levelHeight, 0x111111, 1).setOrigin(0).setDepth(-20);
+    this.add
+      .tileSprite(this.levelWidth / 2, this.levelHeight / 2, this.levelWidth, this.levelHeight, art.wall)
+      .setDepth(-19)
+      .setAlpha(1);
+  }
+
   // -------------------------------------------------------------------------
   // Builder helpers used by subclasses
   // -------------------------------------------------------------------------
 
   /** Add a static platform. Width/height default to a single tile. */
   addPlatform(x, y, width = 120, height = 24, texture = TEX.PLATFORM) {
-    const plat = this.platforms.create(x, y, texture);
+    const art = this.getTempleArt();
+    const visualTexture = texture === TEX.GROUND ? art.ground : art.platform;
+    const visualWidth = width;
+    const visualHeight = texture === TEX.GROUND ? 30 : 26;
+    const surfaceY = y - height / 2;
+    const visualY = surfaceY + visualHeight / 2;
+    const plat = this.platforms.create(x, y, TEX.PIXEL);
     plat.setDisplaySize(width, height);
     plat.refreshBody();
+    plat.setVisible(false);
+
+    if (texture !== TEX.GROUND) {
+      plat.shadow = this.add
+        .tileSprite(x, y + height / 2 + 8, width + 18, 18, TEX.SHADOW)
+        .setDepth(0)
+        .setAlpha(0.55);
+    }
+    plat.visual = this.add
+      .image(x, visualY, visualTexture)
+      .setDisplaySize(visualWidth, visualHeight)
+      .setDepth(1);
     return plat;
   }
 
@@ -159,8 +194,8 @@ export default class BaseLevelScene extends Phaser.Scene {
     return door;
   }
 
-  addButton(x, y, onChange) {
-    const button = new Button(this, x, y, onChange);
+  addButton(x, y, onChange, texture = TEX.BUTTON) {
+    const button = new Button(this, x, y, onChange, texture);
     this.buttons.push(button);
     return button;
   }
@@ -178,15 +213,11 @@ export default class BaseLevelScene extends Phaser.Scene {
   }
 
   /**
-   * A danger zone. Whichever character touches it respawns at their own spawn
-   * point — the rest of the level (and the other player's progress) is left
-   * untouched. `type` selects the visual ('water' by default).
+   * A lava danger zone. Whichever character touches it respawns at their own
+   * spawn point; level state and the other player's progress are preserved.
    */
-  addHazard(x, y, width, height, type = 'water') {
-    const visual =
-      type === 'water'
-        ? this.makeWaterVisual(x, y, width, height)
-        : this.add.rectangle(x, y, width, height, 0xc62828, 0.55).setStrokeStyle(2, 0xff8a80, 0.8).setDepth(1);
+  addHazard(x, y, width, height) {
+    const visual = this.makeLavaVisual(x, y, width, height);
 
     // Invisible static sensor body used for the overlap test.
     const zone = this.add.zone(x, y, width, height);
@@ -196,47 +227,46 @@ export default class BaseLevelScene extends Phaser.Scene {
     return zone;
   }
 
-  /** Animated water: deep body, a rippling surface line and drifting glints. */
-  makeWaterVisual(x, y, width, height) {
+  /** Animated lava using the reference-sheet lava strip. */
+  makeLavaVisual(x, y, width, height) {
     const c = this.add.container(x, y).setDepth(1);
+    const visualWidth = width;
+    const visualHeight = Math.max(24, Math.round(height * 0.62));
+    const visualOffsetY = -height / 2 + visualHeight / 2;
 
-    const body = this.add.rectangle(0, 0, width, height, 0x1565c0, 0.55);
-    const deep = this.add.rectangle(0, height * 0.18, width, height * 0.64, 0x0d47a1, 0.45);
-    const surface = this.add.rectangle(0, -height / 2 + 4, width, 6, 0x64b5f6, 0.9);
-    c.add([body, deep, surface]);
+    const body = this.add.tileSprite(0, visualOffsetY, visualWidth, visualHeight, TEX.LAVA);
+    const glow = this.add.rectangle(0, visualOffsetY - visualHeight / 2 + 8, visualWidth, 8, 0xffc400, 0.24);
+    c.add([body, glow]);
 
-    // Gentle bobbing / shimmer of the surface so it reads as moving water.
     this.tweens.add({
-      targets: surface,
-      y: surface.y - 2,
+      targets: body,
+      tilePositionX: 96,
+      duration: 1800,
+      repeat: -1,
+      ease: 'Linear'
+    });
+    this.tweens.add({
+      targets: glow,
       alpha: 0.55,
-      duration: 900,
+      y: glow.y - 2,
+      duration: 620,
       yoyo: true,
       repeat: -1,
       ease: 'Sine.easeInOut'
     });
 
-    // A couple of small highlights drifting across the surface.
-    for (let i = 0; i < 2; i += 1) {
-      const glint = this.add.rectangle(
-        Phaser.Math.Between(-width / 2 + 8, width / 2 - 8),
-        -height / 2 + 9,
-        9,
-        2,
-        0xe3f2fd,
-        0.7
-      );
-      c.add(glint);
-      this.tweens.add({
-        targets: glint,
-        x: glint.x + Phaser.Math.Between(-12, 12),
-        alpha: 0.2,
-        duration: 1100 + i * 350,
-        yoyo: true,
-        repeat: -1,
-        ease: 'Sine.easeInOut'
-      });
-    }
+    const emitter = this.add.particles(x, y + visualOffsetY - visualHeight / 2 + 8, TEX.PIXEL, {
+      x: { min: -visualWidth / 2 + 4, max: visualWidth / 2 - 4 },
+      lifespan: 650,
+      speedY: { min: -35, max: -10 },
+      speedX: { min: -10, max: 10 },
+      scale: { start: 3, end: 0 },
+      alpha: { start: 0.75, end: 0 },
+      tint: [0xffc400, 0xff6d00, 0xff2a00],
+      frequency: 180,
+      quantity: 1
+    }).setDepth(2);
+    c.lavaEmitter = emitter;
 
     return c;
   }
@@ -353,6 +383,7 @@ export default class BaseLevelScene extends Phaser.Scene {
           door.getBounds()
         );
       player.atDoor = atDoor;
+      door.setOccupied(atDoor);
 
       if (!atDoor) bothSatisfied = false;
     });

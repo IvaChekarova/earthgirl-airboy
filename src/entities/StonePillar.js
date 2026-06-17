@@ -13,6 +13,7 @@
 // tick(delta).
 
 import Phaser from 'phaser';
+import { TEX } from '../utils/textures.js';
 
 export default class StonePillar extends Phaser.GameObjects.Rectangle {
   /**
@@ -43,6 +44,15 @@ export default class StonePillar extends Phaser.GameObjects.Rectangle {
     this.body.setVelocity(0, 0);
     this.setStrokeStyle(2, 0x5d4037);
     this.setDepth(-1);
+    this.setVisible(false);
+
+    this.shadow = scene.add
+      .tileSprite(opts.x, groundY + 8, width + 20, 16, TEX.SHADOW)
+      .setDepth(-2)
+      .setAlpha(0.45);
+    this.visual = scene.add
+      .tileSprite(opts.x, parkedY, width, height, TEX.PILLAR)
+      .setDepth(-1);
 
     this.raisedY = raisedY;
     this.parkedY = parkedY;
@@ -50,6 +60,11 @@ export default class StonePillar extends Phaser.GameObjects.Rectangle {
     this.targetY = parkedY;
     this.isRaised = false;
     this._moving = false; // only true while travelling to a new target
+  }
+
+  syncVisual() {
+    if (!this.visual) return;
+    this.visual.setPosition(this.x, this.y);
   }
 
   /** true → drive up to the raised position; false → drive back down. */
@@ -66,16 +81,24 @@ export default class StonePillar extends Phaser.GameObjects.Rectangle {
    *  leaves the body completely alone (so a rider stays grounded and can jump,
    *  and the pillar never micro-bounces). */
   tick(delta) {
+    this.syncVisual();
     if (!this._moving) return;
 
     const dy = this.targetY - this.y;
     if (Math.abs(dy) <= 2) {
       this.body.setVelocityY(0);
       this._moving = false; // settled — don't touch the body again
+      this.syncVisual();
       return;
     }
 
     const dt = (delta || 16.67) / 1000;
     this.body.setVelocityY(Phaser.Math.Clamp(dy / dt, -this.speed, this.speed));
+  }
+
+  destroy(fromScene) {
+    if (this.visual) this.visual.destroy();
+    if (this.shadow) this.shadow.destroy();
+    super.destroy(fromScene);
   }
 }

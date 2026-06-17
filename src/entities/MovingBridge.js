@@ -34,9 +34,20 @@ export default class MovingBridge extends Phaser.Physics.Arcade.Image {
     super(scene, opts.x, opts.activeY, TEX.MOVING_PLATFORM);
 
     scene.add.existing(this);
-    this.setDisplaySize(opts.width ?? 200, this.height);
+    const width = opts.width ?? 200;
+    this.setDisplaySize(width, 20);
     this.setDepth(3);
-    this.setTint(0x7e57c2);
+    this.setVisible(false);
+
+    const art = scene.getTempleArt ? scene.getTempleArt() : { moving: TEX.MOVING_PLATFORM };
+    this.shadow = scene.add
+      .tileSprite(opts.x, opts.activeY + 18, width + 18, 18, TEX.SHADOW)
+      .setDepth(1)
+      .setAlpha(0.5);
+    this.visual = scene.add
+      .image(opts.x, (startActive ? opts.activeY : opts.parkedY) + 10, art.moving)
+      .setDisplaySize(Math.round(width * 0.9), 24)
+      .setDepth(3);
 
     // Static body, sized + fixed at the ACTIVE position. It never moves.
     scene.physics.add.existing(this, true);
@@ -54,6 +65,11 @@ export default class MovingBridge extends Phaser.Physics.Arcade.Image {
     }
   }
 
+  setTint(...args) {
+    super.setTint(...args);
+    return this;
+  }
+
   /** true → solid at activeY (slides down); false → intangible (slides to parkedY). */
   setActive(value) {
     value = !!value;
@@ -67,11 +83,17 @@ export default class MovingBridge extends Phaser.Physics.Arcade.Image {
     // Flip collision immediately so it is reliable; the tween is visual only.
     this.body.enable = value;
     this._tween = this.scene.tweens.add({
-      targets: this,
-      y: value ? this.activeY : this.parkedY,
+      targets: this.visual,
+      y: (value ? this.activeY : this.parkedY) + 10,
       duration: this.duration,
       ease: 'Sine.easeInOut'
     });
     return this;
+  }
+
+  destroy(fromScene) {
+    if (this.visual) this.visual.destroy();
+    if (this.shadow) this.shadow.destroy();
+    super.destroy(fromScene);
   }
 }

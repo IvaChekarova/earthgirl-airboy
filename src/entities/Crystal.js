@@ -21,11 +21,16 @@ export default class Crystal extends Phaser.Physics.Arcade.Sprite {
 
     this.element = element;
     this.collected = false;
+    this.setDisplaySize(24, 28);
 
     // Crystals float — turn off gravity for them.
     this.body.setAllowGravity(false);
     this.body.setImmovable(true);
+    this.body.setSize(26, 26);
     this.setDepth(5);
+    this.glow = scene.add
+      .ellipse(x, y + 2, 25, 30, element === 'air' ? 0x40cfff : 0x93f000, 0.12)
+      .setDepth(4);
 
     // Gentle bobbing animation.
     this.baseY = y;
@@ -33,6 +38,15 @@ export default class Crystal extends Phaser.Physics.Arcade.Sprite {
       targets: this,
       y: y - 8,
       duration: 1100,
+      yoyo: true,
+      repeat: -1,
+      ease: 'Sine.easeInOut'
+    });
+    scene.tweens.add({
+      targets: this.glow,
+      alpha: { from: 0.1, to: 0.24 },
+      scale: { from: 0.94, to: 1.04 },
+      duration: 900,
       yoyo: true,
       repeat: -1,
       ease: 'Sine.easeInOut'
@@ -60,7 +74,7 @@ export default class Crystal extends Phaser.Physics.Arcade.Sprite {
     this.spawnBurst();
 
     this.scene.tweens.add({
-      targets: this,
+      targets: [this, this.glow],
       scale: 0,
       alpha: 0,
       duration: 180,
@@ -86,5 +100,15 @@ export default class Crystal extends Phaser.Physics.Arcade.Sprite {
     emitter.setDepth(8);
     emitter.explode(14);
     this.scene.time.delayedCall(500, () => emitter.destroy());
+  }
+
+  preUpdate(time, delta) {
+    super.preUpdate(time, delta);
+    if (this.glow) this.glow.setPosition(this.x, this.y + 2);
+  }
+
+  destroy(fromScene) {
+    if (this.glow) this.glow.destroy();
+    super.destroy(fromScene);
   }
 }

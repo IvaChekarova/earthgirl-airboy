@@ -1,114 +1,80 @@
-import referenceUrl from '../assets/references/earthgirl-airboy-reference.png';
+import { makeAssetTexture, preloadReferenceAssets, REF } from './textures.js';
 
-const REFERENCE_KEY = 'earthgirl-airboy-reference';
-const W = 64;
-const H = 64;
+const FRAME_W = 64;
+const FRAME_H = 64;
+const AB_FRAME_W = 72;
+const AB_FRAME_H = 72;
+const EG_CELL_W = 310;
 
-const CROPS = {
-  airboy: { x: 0, y: 20, w: 635, h: 1020 },
-  earthgirl: { x: 575, y: 120, w: 790, h: 910 }
+const EG = {
+  idle: { x: 0, y: 80, w: EG_CELL_W, h: 540 },
+  walk1: { x: EG_CELL_W, y: 80, w: EG_CELL_W, h: 540 },
+  walk2: { x: EG_CELL_W * 2, y: 80, w: EG_CELL_W, h: 540 },
+  walk3: { x: EG_CELL_W * 3, y: 80, w: EG_CELL_W, h: 540 },
+  jump: { x: EG_CELL_W * 4, y: 80, w: EG_CELL_W, h: 540 },
+  fall: { x: EG_CELL_W * 5, y: 80, w: EG_CELL_W, h: 540 },
+  land: { x: EG_CELL_W * 6, y: 80, w: 312, h: 540 }
 };
 
-const FRAME_KEYS = {
-  eg: ['eg-idle-0', 'eg-idle-1', 'eg-walk-0', 'eg-walk-1', 'eg-walk-2', 'eg-walk-3', 'eg-jump', 'eg-land'],
-  ab: ['ab-idle-0', 'ab-idle-1', 'ab-walk-0', 'ab-walk-1', 'ab-walk-2', 'ab-walk-3', 'ab-jump', 'ab-land']
+const AB = {
+  idle: { x: 10, y: 260, w: 230, h: 390 },
+  walk1: { x: 285, y: 260, w: 230, h: 390 },
+  walk2: { x: 560, y: 265, w: 230, h: 390 },
+  walk3: { x: 810, y: 260, w: 250, h: 395 },
+  jump: { x: 1070, y: 230, w: 260, h: 385 },
+  fall: { x: 1315, y: 215, w: 220, h: 450 },
+  land: { x: 1498, y: 385, w: 235, h: 275 }
 };
 
 export function preloadCharacterReference(scene) {
-  if (!scene.textures.exists(REFERENCE_KEY)) {
-    scene.load.image(REFERENCE_KEY, referenceUrl);
-  }
+  preloadReferenceAssets(scene);
 }
 
-function isCheckerPixel(r, g, b, a) {
-  if (a < 20) return true;
-  const max = Math.max(r, g, b);
-  const min = Math.min(r, g, b);
-  return max - min <= 5 && r >= 218 && g >= 218 && b >= 218;
+function makeFrame(scene, key, refKey, crop, opts = {}) {
+  makeAssetTexture(scene, key, refKey, opts.width ?? FRAME_W, opts.height ?? FRAME_H, {
+    crop,
+    bgMode: opts.bgMode,
+    fillX: opts.fillX ?? 0.95,
+    fillY: opts.fillY ?? 0.97,
+    offsetX: opts.offsetX ?? 0,
+    offsetY: 5 + (opts.offsetY ?? 0)
+  });
 }
 
-function removeEdgeCheckerboard(canvas) {
-  const ctx = canvas.getContext('2d');
-  const { width, height } = canvas;
-  const img = ctx.getImageData(0, 0, width, height);
-  const { data } = img;
-  const seen = new Uint8Array(width * height);
-  const stack = [];
-
-  const enqueue = (x, y) => {
-    if (x < 0 || y < 0 || x >= width || y >= height) return;
-    const idx = y * width + x;
-    if (seen[idx]) return;
-    const p = idx * 4;
-    if (!isCheckerPixel(data[p], data[p + 1], data[p + 2], data[p + 3])) return;
-    seen[idx] = 1;
-    stack.push(idx);
-  };
-
-  for (let x = 0; x < width; x += 1) {
-    enqueue(x, 0);
-    enqueue(x, height - 1);
-  }
-  for (let y = 0; y < height; y += 1) {
-    enqueue(0, y);
-    enqueue(width - 1, y);
-  }
-
-  while (stack.length) {
-    const idx = stack.pop();
-    const x = idx % width;
-    const y = Math.floor(idx / width);
-    const p = idx * 4;
-    data[p + 3] = 0;
-    enqueue(x + 1, y);
-    enqueue(x - 1, y);
-    enqueue(x, y + 1);
-    enqueue(x, y - 1);
-  }
-
-  ctx.putImageData(img, 0, 0);
-}
-
-function makeCropCanvas(source, crop) {
-  const canvas = document.createElement('canvas');
-  canvas.width = crop.w;
-  canvas.height = crop.h;
-
-  const ctx = canvas.getContext('2d');
-  ctx.drawImage(source, crop.x, crop.y, crop.w, crop.h, 0, 0, crop.w, crop.h);
-  removeEdgeCheckerboard(canvas);
-
-  return canvas;
-}
-
-function writeTexture(scene, key, cropCanvas) {
-  if (scene.textures.exists(key)) scene.textures.remove(key);
-
-  const texture = scene.textures.createCanvas(key, W, H);
-  const ctx = texture.getContext();
-  const scale = Math.min(W / cropCanvas.width, H / cropCanvas.height);
-  const dw = Math.round(cropCanvas.width * scale);
-  const dh = Math.round(cropCanvas.height * scale);
-  const dx = Math.round((W - dw) / 2);
-  const dy = Math.round(H - dh);
-
-  ctx.clearRect(0, 0, W, H);
-  ctx.imageSmoothingEnabled = true;
-  ctx.imageSmoothingQuality = 'high';
-  ctx.drawImage(cropCanvas, dx, dy, dw, dh);
-  texture.refresh();
+function makeAirboyFrame(scene, key, crop, opts = {}) {
+  makeFrame(scene, key, REF.AIRBOY_SPRITESHEET, crop, {
+    width: AB_FRAME_W,
+    height: AB_FRAME_H,
+    bgMode: 'darkOnly',
+    fillX: opts.fillX ?? 1,
+    fillY: opts.fillY ?? 1,
+    offsetX: opts.offsetX ?? 0,
+    offsetY: opts.offsetY ?? 4
+  });
 }
 
 export function generateCharacterTextures(scene) {
   if (scene.textures.exists('eg-idle-0') && scene.textures.exists('ab-idle-0')) return;
-  if (!scene.textures.exists(REFERENCE_KEY)) return;
 
-  const source = scene.textures.get(REFERENCE_KEY).getSourceImage();
-  const earthgirl = makeCropCanvas(source, CROPS.earthgirl);
-  const airboy = makeCropCanvas(source, CROPS.airboy);
+  makeFrame(scene, 'eg-idle-0', REF.EARTHGIRL_SPRITESHEET, EG.idle);
+  makeFrame(scene, 'eg-idle-1', REF.EARTHGIRL_SPRITESHEET, EG.idle, { offsetY: -1 });
+  makeFrame(scene, 'eg-walk-0', REF.EARTHGIRL_SPRITESHEET, EG.walk1);
+  makeFrame(scene, 'eg-walk-1', REF.EARTHGIRL_SPRITESHEET, EG.walk2);
+  makeFrame(scene, 'eg-walk-2', REF.EARTHGIRL_SPRITESHEET, EG.walk3);
+  makeFrame(scene, 'eg-walk-3', REF.EARTHGIRL_SPRITESHEET, EG.walk2, { offsetY: -1 });
+  makeFrame(scene, 'eg-jump', REF.EARTHGIRL_SPRITESHEET, EG.jump);
+  makeFrame(scene, 'eg-fall', REF.EARTHGIRL_SPRITESHEET, EG.fall);
+  makeFrame(scene, 'eg-land', REF.EARTHGIRL_SPRITESHEET, EG.land);
 
-  FRAME_KEYS.eg.forEach((key) => writeTexture(scene, key, earthgirl));
-  FRAME_KEYS.ab.forEach((key) => writeTexture(scene, key, airboy));
+  makeAirboyFrame(scene, 'ab-idle-0', AB.idle);
+  makeAirboyFrame(scene, 'ab-idle-1', AB.idle, { offsetY: 4 });
+  makeAirboyFrame(scene, 'ab-walk-0', AB.walk1);
+  makeAirboyFrame(scene, 'ab-walk-1', AB.walk2);
+  makeAirboyFrame(scene, 'ab-walk-2', AB.walk3);
+  makeAirboyFrame(scene, 'ab-walk-3', AB.walk2, { offsetY: 4 });
+  makeAirboyFrame(scene, 'ab-jump', AB.jump);
+  makeAirboyFrame(scene, 'ab-fall', AB.fall);
+  makeAirboyFrame(scene, 'ab-land', AB.land);
 }
 
 export function registerCharacterAnimations(scene) {
@@ -125,10 +91,12 @@ export function registerCharacterAnimations(scene) {
   add('eg-idle', ['eg-idle-0', 'eg-idle-1'], 2);
   add('eg-walk', ['eg-walk-0', 'eg-walk-1', 'eg-walk-2', 'eg-walk-3'], 10);
   add('eg-jump', ['eg-jump'], 1, 0);
+  add('eg-fall', ['eg-fall'], 1, 0);
   add('eg-land', ['eg-land'], 1, 0);
 
   add('ab-idle', ['ab-idle-0', 'ab-idle-1'], 3);
   add('ab-walk', ['ab-walk-0', 'ab-walk-1', 'ab-walk-2', 'ab-walk-3'], 8);
   add('ab-jump', ['ab-jump'], 1, 0);
+  add('ab-fall', ['ab-fall'], 1, 0);
   add('ab-land', ['ab-land'], 1, 0);
 }

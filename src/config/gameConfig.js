@@ -23,7 +23,10 @@ export const PLAYER = {
   SPEED: 220,
   JUMP_VELOCITY: -470,
   WIDTH: 28,
-  HEIGHT: 40
+  HEIGHT: 40,
+  // On-screen height both characters are scaled to render at, so Earthgirl and
+  // Airboy look the same size regardless of their differing source frames.
+  DISPLAY_HEIGHT: 92
 };
 
 // Brand colours used to generate placeholder sprites (see utils/textures.js).

@@ -20,13 +20,32 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
 
     scene.add.existing(this);
     scene.physics.add.existing(this);
+    this.setDepth(6);
 
     this.label = label;
     this.controls = controls;
 
-    // Physics body setup.
+    // Render both characters at the same on-screen height even though their
+    // source frames differ (Earthgirl 64px, Airboy 72px). Squash/stretch
+    // multiplies this base scale rather than overriding it.
+    this.baseScale = PLAYER.DISPLAY_HEIGHT / this.height;
+    this.setScale(this.baseScale);
+
+    // Physics body setup. Arcade scales the body by the sprite scale, so we
+    // size it in *source* pixels (divided by baseScale) to keep the collision
+    // body exactly PLAYER.WIDTH x PLAYER.HEIGHT in world units. Offsets are
+    // likewise in source pixels: centre horizontally, and sit the body at the
+    // sprite's feet (which render near the frame bottom) so the character
+    // stands on platforms instead of sinking through them.
     this.setCollideWorldBounds(true);
-    this.body.setSize(PLAYER.WIDTH, PLAYER.HEIGHT);
+    const bodyW = PLAYER.WIDTH / this.baseScale;
+    const bodyH = PLAYER.HEIGHT / this.baseScale;
+    const footOverlap = 6; // px the feet visually overlap the ground, in world units
+    this.body.setSize(bodyW, bodyH, false);
+    this.body.setOffset(
+      (this.width - bodyW) / 2,
+      (PLAYER.DISPLAY_HEIGHT - PLAYER.HEIGHT - footOverlap) / this.baseScale
+    );
     this.setDragX(1200);
     this.setMaxVelocity(PLAYER.SPEED, 1200);
 
@@ -38,15 +57,7 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
     this._wasOnGround = true;
     this._landTimer = 0;
 
-    // A small name tag that floats above the character.
-    this.nameTag = scene.add
-      .text(x, y - PLAYER.HEIGHT, label, {
-        fontFamily: 'monospace',
-        fontSize: '11px',
-        color: '#ffffff'
-      })
-      .setOrigin(0.5, 1)
-      .setDepth(20);
+    this.nameTag = null;
   }
 
   /**
@@ -74,8 +85,7 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
     // Visuals only — never touches the physics body.
     this.updateAnimation(onGround);
 
-    // Keep the floating name tag glued to the character.
-    this.nameTag.setPosition(this.x, this.y - PLAYER.HEIGHT * 0.7);
+    if (this.nameTag) this.nameTag.setPosition(this.x, this.y - PLAYER.HEIGHT * 0.7);
   }
 
   /**
@@ -95,7 +105,7 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
     if (this._landTimer > 0) this._landTimer -= delta;
 
     if (this._landTimer > 0) this.play(`${p}-land`, true);
-    else if (!onGround) this.play(`${p}-jump`, true);
+    else if (!onGround) this.play(vy > 40 ? `${p}-fall` : `${p}-jump`, true);
     else if (moving) this.play(`${p}-walk`, true);
     else this.play(`${p}-idle`, true);
 
@@ -114,8 +124,8 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
         tsy = 1.06; // gentle stretch while falling
       }
     }
-    this.scaleX = Phaser.Math.Linear(this.scaleX, tsx, 0.3);
-    this.scaleY = Phaser.Math.Linear(this.scaleY, tsy, 0.3);
+    this.scaleX = Phaser.Math.Linear(this.scaleX, tsx * this.baseScale, 0.3);
+    this.scaleY = Phaser.Math.Linear(this.scaleY, tsy * this.baseScale, 0.3);
   }
 
   destroy(fromScene) {

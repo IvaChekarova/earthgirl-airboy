@@ -23,13 +23,18 @@ export default class StoneWall extends Phaser.Physics.Arcade.Image {
     const bottomY = opts.bottomY ?? 500;
     const height = bottomY - opts.topY;
     const closedY = opts.topY + height / 2;
+    const art = scene.getTempleArt ? scene.getTempleArt() : { wall: TEX.WALL_MOSS };
 
-    super(scene, opts.x, closedY, TEX.PLATFORM);
+    super(scene, opts.x, closedY, art.wall);
 
     scene.add.existing(this);
     this.setDisplaySize(opts.width ?? 32, height);
-    this.setTint(0x5d4037); // heavy dark stone
     this.setDepth(-1);
+    this.setVisible(false);
+
+    this.visual = scene.add
+      .tileSprite(opts.x, closedY, opts.width ?? 32, height, art.wall)
+      .setDepth(-1);
 
     scene.physics.add.existing(this, true); // static body at the closed position
     this.body.updateFromGameObject();
@@ -51,14 +56,14 @@ export default class StoneWall extends Phaser.Physics.Arcade.Image {
     if (value) {
       this.body.enable = false; // passable the moment it starts opening
       this._tween = this.scene.tweens.add({
-        targets: this,
+        targets: this.visual,
         y: this.openY,
         duration: this.duration,
         ease: 'Sine.easeInOut'
       });
     } else {
       this._tween = this.scene.tweens.add({
-        targets: this,
+        targets: this.visual,
         y: this.closedY,
         duration: this.duration,
         ease: 'Sine.easeInOut',
@@ -68,5 +73,10 @@ export default class StoneWall extends Phaser.Physics.Arcade.Image {
       });
     }
     return this;
+  }
+
+  destroy(fromScene) {
+    if (this.visual) this.visual.destroy();
+    super.destroy(fromScene);
   }
 }

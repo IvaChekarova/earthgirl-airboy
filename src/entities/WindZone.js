@@ -28,6 +28,11 @@ export default class WindZone extends Phaser.GameObjects.Zone {
     this.strength = opts.strength ?? 320;
 
     // --- Visuals ---------------------------------------------------------
+    this.generator = scene.add
+      .image(x, y + height / 2 - 12, TEX.WIND_GENERATOR)
+      .setDisplaySize(Math.max(width + 30, 76), 86)
+      .setDepth(2);
+
     this.column = scene.add
       .rectangle(x, y, width, height, 0x64b5f6, 0.16)
       .setStrokeStyle(2, 0x90caf9, 0.45)
@@ -74,6 +79,7 @@ export default class WindZone extends Phaser.GameObjects.Zone {
   }
 
   destroy(fromScene) {
+    this.generator?.destroy();
     this.column?.destroy();
     this.streams?.forEach((s) => s.destroy());
     this.emitter?.destroy();

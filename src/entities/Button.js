@@ -13,20 +13,27 @@ export default class Button extends Phaser.Physics.Arcade.Sprite {
    * @param {number} y
    * @param {(pressed:boolean)=>void} [onChange]
    */
-  constructor(scene, x, y, onChange = () => {}) {
-    super(scene, x, y, TEX.BUTTON);
+  constructor(scene, x, y, onChange = () => {}, texture = TEX.BUTTON) {
+    super(scene, x, y, texture);
 
     scene.add.existing(this);
     scene.physics.add.existing(this);
 
     this.onChange = onChange;
+    this.baseTexture = texture;
     this.pressed = false;
 
     this.body.setAllowGravity(false);
     this.body.setImmovable(true);
     this.setOrigin(0.5, 1); // sit flush on the ground
-    this.body.setSize(this.width, this.height);
+    this.setVisible(false);
+    this.body.setSize(48, 14);
     this.setDepth(3);
+    this.visual = scene.add
+      .image(x, y + 9, texture)
+      .setOrigin(0.5, 1)
+      .setDisplaySize(36, 13)
+      .setDepth(3);
 
     // Tracks whether a player is touching the button this frame, plus a short
     // "grace" so a single-frame gap in the overlap doesn't make it flicker.
@@ -50,10 +57,15 @@ export default class Button extends Phaser.Physics.Arcade.Sprite {
     const nowPressed = this._touchedThisFrame || this._grace > 0;
     if (nowPressed !== this.pressed) {
       this.pressed = nowPressed;
-      this.setTexture(nowPressed ? TEX.BUTTON_PRESSED : TEX.BUTTON);
+      this.visual.setDisplaySize(36, nowPressed ? 9 : 13);
       if (nowPressed) playSfx(this.scene, SFX.BUTTON);
       this.onChange(nowPressed);
     }
     this._touchedThisFrame = false;
+  }
+
+  destroy(fromScene) {
+    if (this.visual) this.visual.destroy();
+    super.destroy(fromScene);
   }
 }

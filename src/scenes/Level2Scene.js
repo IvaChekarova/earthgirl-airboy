@@ -83,12 +83,12 @@ export default class Level2Scene extends BaseLevelScene {
 
     // --- Buttons (commented with exactly what each one controls) ----------
     // BUTTON A (Airboy, on PA): hold to lower Bridge 1 over Lava 1.
-    this.addButton(180, 350, (pressed) => bridge1.setActive(pressed));
+    this.addButton(180, 350, (pressed) => bridge1.setActive(pressed), TEX.BUTTON_AIR);
     // BUTTON B (Earthgirl, middle floor): HOLD to lift the gate clearing Wind 2.
     // Releasing it drops the gate back down.
-    this.addButton(605, 500, (pressed) => gate.setActive(!pressed));
+    this.addButton(605, 500, (pressed) => gate.setActive(!pressed), TEX.BUTTON_EARTH);
     // BUTTON C (Airboy, on PC): hold to lower Bridge 2 over Lava 2.
-    this.addButton(400, 200, (pressed) => bridge2.setActive(pressed));
+    this.addButton(400, 200, (pressed) => bridge2.setActive(pressed), TEX.BUTTON_AIR);
 
     // --- Crystals: GREEN trace Earthgirl's floor route, BLUE trace Airboy's --
     this.addCrystal(60, 466, 'earth'); //  g1  start floor
@@ -103,11 +103,6 @@ export default class Level2Scene extends BaseLevelScene {
     this.addDoor(925, 468, 'earth'); // on F_exit (reached via Bridge 2)
     this.addDoor(500, 168, 'air'); //   on PC    (reached via Wind 2)
 
-    this.addLabels();
-    this.showIntro(
-      'Airboy rides the wind up to the buttons.\n' +
-        'Each button lowers a bridge for Earthgirl — or lifts the gate. Work together!'
-    );
   }
 
   // -------------------------------------------------------------------------
@@ -134,11 +129,18 @@ export default class Level2Scene extends BaseLevelScene {
    * line (y 500) — can be stood on safely. You only die by actually falling in.
    */
   addLava(x, width) {
-    const top = 500; // ground surface line
-    const bottom = 562; // a touch below the floor
+    const top = 500; // touches the ground/platform edge
+    const bottom = 546;
 
-    this.add.rectangle(x, (top + bottom) / 2, width, bottom - top, 0xb71c1c, 0.7).setDepth(1);
-    const surface = this.add.rectangle(x, top + 4, width, 6, 0xff7043, 0.95).setDepth(1);
+    const lava = this.add.tileSprite(x, (top + bottom) / 2, width, bottom - top, TEX.LAVA).setDepth(1);
+    const surface = this.add.rectangle(x, top + 4, width, 7, 0xffc400, 0.35).setDepth(1);
+    this.tweens.add({
+      targets: lava,
+      tilePositionX: 96,
+      duration: 1800,
+      repeat: -1,
+      ease: 'Linear'
+    });
     this.tweens.add({
       targets: surface,
       alpha: 0.5,
@@ -150,7 +152,8 @@ export default class Level2Scene extends BaseLevelScene {
     });
 
     const sensorTop = 522; // below the bridge/ground walk surface
-    const zone = this.add.zone(x, (sensorTop + bottom) / 2, width, bottom - sensorTop);
+    const sensorBottom = 562;
+    const zone = this.add.zone(x, (sensorTop + sensorBottom) / 2, width, sensorBottom - sensorTop);
     this.physics.add.existing(zone, true);
     this.hazards.push(zone);
     return zone;

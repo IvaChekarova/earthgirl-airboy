@@ -32,8 +32,20 @@ export default class MovingPlatform extends Phaser.Physics.Arcade.Sprite {
     scene.add.existing(this);
     scene.physics.add.existing(this);
 
-    if (opts.width) this.setDisplaySize(opts.width, this.height);
+    const width = opts.width ?? this.width;
+    this.setDisplaySize(width, 20);
     this.body.setSize(this.displayWidth, this.displayHeight);
+    this.setVisible(false);
+
+    const art = scene.getTempleArt ? scene.getTempleArt() : { moving: TEX.MOVING_PLATFORM };
+    this.shadow = scene.add
+      .tileSprite(opts.x, opts.y + 18, width + 18, 18, TEX.SHADOW)
+      .setDepth(1)
+      .setAlpha(0.45);
+    this.visual = scene.add
+      .image(opts.x, opts.y + 10, art.moving)
+      .setDisplaySize(Math.round(width * 0.9), 24)
+      .setDepth(3);
 
     // Immovable so players stand on it; gravity off so it floats.
     this.body.setAllowGravity(false);
@@ -48,6 +60,12 @@ export default class MovingPlatform extends Phaser.Physics.Arcade.Sprite {
     // Patrol platforms auto-run; lifts wait until a button engages them.
     this.engaged = opts.auto ?? this.mode === 'patrol';
     this._patrolTarget = this.end;
+  }
+
+  syncVisual() {
+    if (!this.visual) return;
+    this.visual.setPosition(this.x, this.y + 10);
+    this.shadow.setPosition(this.x, this.y + 18);
   }
 
   /** Turn the platform on/off (Button callbacks use this). */
@@ -65,6 +83,7 @@ export default class MovingPlatform extends Phaser.Physics.Arcade.Sprite {
     this.body.reset(target.x, target.y);
     this.body.setAllowGravity(false);
     this.body.setImmovable(true);
+    this.syncVisual();
   }
 
   preUpdate(time, delta) {
@@ -83,12 +102,14 @@ export default class MovingPlatform extends Phaser.Physics.Arcade.Sprite {
       // clamped to a comfortable range.
       const speed = Phaser.Math.Clamp(dist * 2.4, 35, this.speed);
       this._moveToward(target, speed);
+      this.syncVisual();
       return;
     }
 
     // patrol mode
     if (!this.engaged) {
       this.body.setVelocity(0, 0);
+      this.syncVisual();
       return;
     }
     const target = this._patrolTarget;
@@ -98,5 +119,12 @@ export default class MovingPlatform extends Phaser.Physics.Arcade.Sprite {
       return;
     }
     this._moveToward(target);
+    this.syncVisual();
+  }
+
+  destroy(fromScene) {
+    if (this.visual) this.visual.destroy();
+    if (this.shadow) this.shadow.destroy();
+    super.destroy(fromScene);
   }
 }

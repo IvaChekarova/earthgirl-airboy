@@ -19,13 +19,23 @@ export default class EarthBridge extends Phaser.Physics.Arcade.Image {
    * @param {number} [opts.height]
    */
   constructor(scene, opts) {
-    super(scene, opts.x, opts.y, TEX.PLATFORM);
+    super(scene, opts.x, opts.y, TEX.EARTH_BRIDGE);
 
     scene.add.existing(this);
     this.setOrigin(0, 0.5); // grow rightward from the left edge
     this.setDisplaySize(opts.width, opts.height ?? 18);
-    this.setTint(0x6d4c41); // root-brown
     this.setDepth(3); // clearly above the lava
+    this.setVisible(false);
+
+    this.shadow = scene.add
+      .tileSprite(opts.x, opts.y + 13, opts.width + 16, 14, TEX.SHADOW)
+      .setOrigin(0, 0.5)
+      .setDepth(1)
+      .setAlpha(0.45);
+    this.visual = scene.add
+      .tileSprite(opts.x, opts.y, opts.width, opts.height ?? 22, TEX.EARTH_BRIDGE)
+      .setOrigin(0, 0.5)
+      .setDepth(3);
 
     scene.physics.add.existing(this, true); // static body spanning the full bridge
     this.body.updateFromGameObject();
@@ -38,6 +48,8 @@ export default class EarthBridge extends Phaser.Physics.Arcade.Image {
     // Start un-formed: no collision, zero width.
     this.body.enable = false;
     this.scaleX = 0;
+    this.visual.scaleX = 0;
+    this.shadow.scaleX = 0;
   }
 
   /** true → grow into place (solid once full); false → retract (intangible). */
@@ -49,12 +61,19 @@ export default class EarthBridge extends Phaser.Physics.Arcade.Image {
 
     // Toggle collision immediately (reliable); the grow/shrink is visual only.
     this.body.enable = value;
+    this.scaleX = value ? this.fullScaleX : 0;
     this._tween = this.scene.tweens.add({
-      targets: this,
-      scaleX: value ? this.fullScaleX : 0,
+      targets: [this.visual, this.shadow],
+      scaleX: value ? 1 : 0,
       duration: value ? this.duration : this.duration * 0.7,
       ease: value ? 'Quad.easeOut' : 'Quad.easeIn'
     });
     return this;
+  }
+
+  destroy(fromScene) {
+    if (this.visual) this.visual.destroy();
+    if (this.shadow) this.shadow.destroy();
+    super.destroy(fromScene);
   }
 }

@@ -39,18 +39,18 @@ export default class Level1Scene extends BaseLevelScene {
     const H = this.LEVEL_HEIGHT; // 540; ground surface sits at y = 500
 
     // --- Spawn points (read by BaseLevelScene after buildLevel) ------------
-    this.earthSpawn = { x: 60, y: H - 100 };
-    this.airSpawn = { x: 115, y: H - 100 };
+    this.earthSpawn = { x: 35, y: H - 100 };
+    this.airSpawn = { x: 85, y: H - 100 };
 
     // --- Static geometry ---------------------------------------------------
     // The floor is split by a small danger pit in the middle. Surface y ≈ 500.
     this.addPlatform(180, 520, 360, 40, TEX.GROUND); // left floor:  x 0 … 360
     this.addPlatform(690, 520, 540, 40, TEX.GROUND); // right floor: x 420 … 960
 
-    // The pit is a pool of water in a 60px-wide gap (x 360 … 420). Falling in
+    // The pit is lava in a 60px-wide gap (x 360 … 420). Falling in
     // respawns ONLY the character who fell — the other player keeps playing.
     // Surface sits at the floor line (y ≈ 500).
-    this.addHazard(390, 532, 60, 64, 'water');
+    this.addPitLava(390, 532, 60, 64);
 
     // Earthgirl's high exit ledge (left). Only reachable via the lift.
     this.addPlatform(110, 190, 190, 24); // left 15 … right 205, top 178
@@ -76,10 +76,10 @@ export default class Level1Scene extends BaseLevelScene {
 
     // --- Buttons -----------------------------------------------------------
     // Button A (left of the gate): Earthgirl holds it to open the gate.
-    this.addButton(160, H - 40, (pressed) => (pressed ? gate.open() : gate.close()));
+    this.addButton(160, H - 40, (pressed) => (pressed ? gate.open() : gate.close()), TEX.BUTTON_EARTH);
 
     // Button B (right of the gate): Airboy holds it to raise Earthgirl's lift.
-    this.addButton(560, H - 40, (pressed) => lift.engage(pressed));
+    this.addButton(560, H - 40, (pressed) => lift.engage(pressed), TEX.BUTTON_AIR);
 
     // --- Crystals: 3 green (earth) + 3 blue (air) --------------------------
     // Green — all on Earthgirl's side, spread along her route up the lift.
@@ -96,7 +96,45 @@ export default class Level1Scene extends BaseLevelScene {
     this.addDoor(90, 146, 'earth'); //  on Earthgirl's ledge
     this.addDoor(890, 286, 'air'); //   on Airboy's ledge
 
-    this.addHints();
+  }
+
+  addPitLava(x, y, width, height) {
+    const floorY = 500;
+    const visualWidth = width + 26;
+    const lava = this.add.tileSprite(x, floorY + 23, visualWidth, 38, TEX.LAVA).setDepth(1);
+    const surface = this.add.rectangle(x, floorY + 11, visualWidth - 10, 4, 0xffc400, 0.14).setDepth(1);
+    this.tweens.add({
+      targets: lava,
+      tilePositionX: 96,
+      duration: 1800,
+      repeat: -1,
+      ease: 'Linear'
+    });
+    this.tweens.add({
+      targets: surface,
+      alpha: 0.24,
+      y: floorY + 9,
+      duration: 680,
+      yoyo: true,
+      repeat: -1,
+      ease: 'Sine.easeInOut'
+    });
+    this.add.particles(x, floorY + 12, TEX.PIXEL, {
+      x: { min: -visualWidth / 2 + 8, max: visualWidth / 2 - 8 },
+      lifespan: 520,
+      speedY: { min: -22, max: -8 },
+      speedX: { min: -5, max: 5 },
+      scale: { start: 2, end: 0 },
+      alpha: { start: 0.45, end: 0 },
+      tint: [0xffc400, 0xff6d00],
+      frequency: 300,
+      quantity: 1
+    }).setDepth(2);
+
+    const zone = this.add.zone(x, y, width, height);
+    this.physics.add.existing(zone, true);
+    this.hazards.push(zone);
+    return zone;
   }
 
   /** World-space labels so first-time players know what each object does. */
@@ -132,7 +170,7 @@ export default class Level1Scene extends BaseLevelScene {
     // Supporting captions.
     caption(460, 250, 'GATE', '#ffe0a0');
     caption(260, 300, '▲ lift', BLUE);
-    caption(390, 470, 'WATER', '#90caf9');
+    caption(390, 470, 'LAVA', '#ffab91');
     badge(90, 120, 'Earthgirl exit', GREEN);
     badge(890, 250, 'Airboy exit', BLUE);
   }

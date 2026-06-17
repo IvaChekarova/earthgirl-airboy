@@ -2,7 +2,7 @@
 
 import Phaser from 'phaser';
 import { COLORS } from '../config/gameConfig.js';
-import { generatePlaceholderTextures } from '../utils/textures.js';
+import { generatePlaceholderTextures, preloadReferenceAssets, TEX } from '../utils/textures.js';
 import { generateCharacterTextures, preloadCharacterReference } from '../utils/characterTextures.js';
 
 export default class MenuScene extends Phaser.Scene {
@@ -11,6 +11,7 @@ export default class MenuScene extends Phaser.Scene {
   }
 
   preload() {
+    preloadReferenceAssets(this);
     preloadCharacterReference(this);
   }
 
@@ -22,9 +23,10 @@ export default class MenuScene extends Phaser.Scene {
     // Clean up any UI overlay left over from a previous play session.
     if (this.scene.isActive('UIScene')) this.scene.stop('UIScene');
 
-    // Background.
-    this.add.rectangle(0, 0, width, height, 0x141a2b).setOrigin(0);
-    this.add.rectangle(0, height - 70, width, 70, 0x0e1322).setOrigin(0);
+    // Ancient temple background.
+    this.add.rectangle(0, 0, width, height, 0x111111).setOrigin(0);
+    this.add.tileSprite(width / 2, height / 2, width, height, TEX.WALL_MOSS).setAlpha(1);
+    this.add.tileSprite(width / 2, height - 34, width, 68, TEX.GROUND_EARTH).setAlpha(0.95);
 
     // Two character chips beside the title for flavour.
     this.add.image(width / 2 - 200, height / 2 - 96, 'eg-idle-0').setScale(1.4);
@@ -74,7 +76,8 @@ export default class MenuScene extends Phaser.Scene {
     const h = 48;
     const container = this.add.container(x, y);
 
-    const bg = this.add.rectangle(0, 0, w, h, color, 0.9).setStrokeStyle(2, 0xffffff, 0.5);
+    const bg = this.add.tileSprite(0, 0, w, h, TEX.PLATFORM_EARTH).setTint(color);
+    const rim = this.add.rectangle(0, 0, w, h, 0x000000, 0).setStrokeStyle(2, 0xb6e86a, 0.75);
     const text = this.add
       .text(0, 0, label, {
         fontFamily: 'monospace',
@@ -84,21 +87,27 @@ export default class MenuScene extends Phaser.Scene {
       })
       .setOrigin(0.5);
 
-    container.add([bg, text]);
+    container.add([bg, rim, text]);
     container.setSize(w, h);
     container.setInteractive(new Phaser.Geom.Rectangle(-w / 2, -h / 2, w, h), Phaser.Geom.Rectangle.Contains);
 
     container.on('pointerover', () => {
       bg.setScale(1.05);
+      rim.setScale(1.05);
       this.input.setDefaultCursor('pointer');
     });
     container.on('pointerout', () => {
       bg.setScale(1);
+      rim.setScale(1);
       this.input.setDefaultCursor('default');
     });
-    container.on('pointerdown', () => bg.setScale(0.96));
+    container.on('pointerdown', () => {
+      bg.setScale(0.96);
+      rim.setScale(0.96);
+    });
     container.on('pointerup', () => {
       bg.setScale(1.05);
+      rim.setScale(1.05);
       onClick();
     });
 
@@ -108,9 +117,8 @@ export default class MenuScene extends Phaser.Scene {
   buildInstructionsPanel(width, height) {
     const panel = this.add.container(width / 2, height / 2 + 10).setVisible(false);
 
-    const bg = this.add
-      .rectangle(0, 0, 560, 320, 0x0b1020, 0.97)
-      .setStrokeStyle(2, 0x4caf50, 0.8);
+    const bg = this.add.tileSprite(0, 0, 560, 320, TEX.WALL_MOSS).setAlpha(0.96);
+    const frame = this.add.rectangle(0, 0, 560, 320, 0x000000, 0).setStrokeStyle(3, 0x92d45a, 0.9);
 
     const title = this.add
       .text(0, -128, 'HOW TO PLAY', {
@@ -156,7 +164,7 @@ export default class MenuScene extends Phaser.Scene {
       })
       .setOrigin(0.5);
 
-    panel.add([bg, title, body, hint]);
+    panel.add([bg, frame, title, body, hint]);
     panel.setDepth(100);
     this.instructionsPanel = panel;
   }

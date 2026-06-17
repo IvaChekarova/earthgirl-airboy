@@ -6,6 +6,7 @@
 import Phaser from 'phaser';
 import { COLORS } from '../config/gameConfig.js';
 import { gameEvents, EVENTS } from '../utils/events.js';
+import { TEX } from '../utils/textures.js';
 
 export default class UIScene extends Phaser.Scene {
   constructor() {
@@ -17,7 +18,8 @@ export default class UIScene extends Phaser.Scene {
     this.hasNext = false;
 
     // ---- Top HUD bar ----
-    this.add.rectangle(0, 0, width, 44, 0x000000, 0.4).setOrigin(0).setScrollFactor(0);
+    this.add.tileSprite(width / 2, 22, width, 44, TEX.WALL_MOSS).setAlpha(0.75).setScrollFactor(0);
+    this.add.rectangle(0, 42, width, 3, 0x9bd44d, 0.65).setOrigin(0).setScrollFactor(0);
 
     this.levelText = this.add
       .text(16, 12, 'Level 1 — Earth Gate', {
@@ -135,8 +137,9 @@ export default class UIScene extends Phaser.Scene {
 
     const panel = this.add.container(0, 0).setDepth(90).setScrollFactor(0);
     const dim = this.add.rectangle(0, 0, width, height, 0x05070f, 0.6).setOrigin(0);
-    const box = this.add
-      .rectangle(width / 2, height / 2, 560, 150, 0x121a2e, 0.97)
+    const box = this.add.tileSprite(width / 2, height / 2, 560, 150, TEX.WALL_MOSS).setAlpha(0.98);
+    const frame = this.add
+      .rectangle(width / 2, height / 2, 560, 150, 0x000000, 0)
       .setStrokeStyle(3, 0xffd54f, 0.9);
 
     const body = this.add
@@ -158,7 +161,7 @@ export default class UIScene extends Phaser.Scene {
       })
       .setOrigin(0.5);
 
-    panel.add([dim, box, body, hint]);
+    panel.add([dim, box, frame, body, hint]);
     this.introPanel = panel;
 
     // Dismiss on input, or auto-dismiss after a few seconds.
@@ -194,8 +197,9 @@ export default class UIScene extends Phaser.Scene {
     this.winScreen = this.add.container(0, 0).setDepth(100).setScrollFactor(0).setVisible(false);
 
     const dim = this.add.rectangle(0, 0, width, height, 0x05070f, 0.78).setOrigin(0);
-    const panel = this.add
-      .rectangle(width / 2, height / 2, 460, 280, 0x121a2e, 0.98)
+    const panel = this.add.tileSprite(width / 2, height / 2, 460, 280, TEX.WALL_MOSS).setAlpha(0.98);
+    const frame = this.add
+      .rectangle(width / 2, height / 2, 460, 280, 0x000000, 0)
       .setStrokeStyle(3, 0x7cfc9a, 0.9);
 
     this.winTitle = this.add
@@ -216,7 +220,7 @@ export default class UIScene extends Phaser.Scene {
       })
       .setOrigin(0.5);
 
-    this.winScreen.add([dim, panel, this.winTitle, this.winSubtitle]);
+    this.winScreen.add([dim, panel, frame, this.winTitle, this.winSubtitle]);
 
     // Buttons are (re)built when the screen is shown, because the set depends
     // on whether a next level exists.
@@ -268,7 +272,8 @@ export default class UIScene extends Phaser.Scene {
   /** Build a reusable rectangular button as a container. */
   makeButton(x, y, label, w, h, color, onClick) {
     const container = this.add.container(x, y).setScrollFactor(0);
-    const bg = this.add.rectangle(0, 0, w, h, color, 0.92).setStrokeStyle(2, 0xffffff, 0.45);
+    const bg = this.add.tileSprite(0, 0, w, h, TEX.PLATFORM_EARTH).setTint(color);
+    const rim = this.add.rectangle(0, 0, w, h, 0x000000, 0).setStrokeStyle(2, 0xf4e27a, 0.7);
     const text = this.add
       .text(0, 0, label, {
         fontFamily: 'monospace',
@@ -278,7 +283,7 @@ export default class UIScene extends Phaser.Scene {
       })
       .setOrigin(0.5);
 
-    container.add([bg, text]);
+    container.add([bg, rim, text]);
     container.setSize(w, h);
     container.setInteractive(
       new Phaser.Geom.Rectangle(-w / 2, -h / 2, w, h),
@@ -287,15 +292,21 @@ export default class UIScene extends Phaser.Scene {
 
     container.on('pointerover', () => {
       bg.setScale(1.05);
+      rim.setScale(1.05);
       this.input.setDefaultCursor('pointer');
     });
     container.on('pointerout', () => {
       bg.setScale(1);
+      rim.setScale(1);
       this.input.setDefaultCursor('default');
     });
-    container.on('pointerdown', () => bg.setScale(0.95));
+    container.on('pointerdown', () => {
+      bg.setScale(0.95);
+      rim.setScale(0.95);
+    });
     container.on('pointerup', () => {
       bg.setScale(1.05);
+      rim.setScale(1.05);
       onClick();
     });
 

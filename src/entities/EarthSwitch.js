@@ -23,7 +23,7 @@ export default class EarthSwitch extends Phaser.Physics.Arcade.Sprite {
    * @param {(active:boolean)=>void} [opts.onChange]
    */
   constructor(scene, x, y, opts = {}) {
-    super(scene, x, y, TEX.BUTTON);
+    super(scene, x, y, TEX.BUTTON_EARTH);
 
     scene.add.existing(this);
     scene.physics.add.existing(this);
@@ -31,9 +31,14 @@ export default class EarthSwitch extends Phaser.Physics.Arcade.Sprite {
     this.body.setAllowGravity(false);
     this.body.setImmovable(true);
     this.setOrigin(0.5, 1); // sits flush on the ground
-    this.body.setSize(this.width, this.height);
-    this.setTint(0x4caf50); // green = Earthgirl mechanic
+    this.setVisible(false);
+    this.body.setSize(48, 18);
     this.setDepth(3);
+    this.visual = scene.add
+      .image(x, y + 9, TEX.BUTTON_EARTH)
+      .setOrigin(0.5, 1)
+      .setDisplaySize(36, 13)
+      .setDepth(3);
 
     this.latch = opts.latch ?? false;
     this.onChange = opts.onChange ?? (() => {});
@@ -44,11 +49,11 @@ export default class EarthSwitch extends Phaser.Physics.Arcade.Sprite {
 
     // Glowing rune above the pad.
     this.glow = scene.add
-      .rectangle(x, y - 10, 34, 22, 0x66bb6a, 0)
+      .rectangle(x, this.y - 8, 34, 18, 0x66bb6a, 0)
       .setStrokeStyle(2, 0x9cffb0, 0)
       .setDepth(2);
     this.rune = scene.add
-      .text(x, y - 11, '⟐', { fontFamily: 'monospace', fontSize: '15px', color: '#1b5e20' })
+      .text(x, this.y - 9, '⟐', { fontFamily: 'monospace', fontSize: '13px', color: '#1b5e20' })
       .setOrigin(0.5)
       .setDepth(4);
   }
@@ -77,7 +82,15 @@ export default class EarthSwitch extends Phaser.Physics.Arcade.Sprite {
   setVisualActive(on) {
     this.glow.setStrokeStyle(2, 0x9cffb0, on ? 1 : 0);
     this.glow.setFillStyle(0x66bb6a, on ? 0.3 : 0);
-    this.setTint(on ? 0x9cffb0 : 0x4caf50);
+    this.setTexture(on ? TEX.BUTTON_EARTH : TEX.BUTTON_EARTH);
+    this.visual.setDisplaySize(36, on ? 9 : 13);
     this.rune.setColor(on ? '#0b3d0b' : '#1b5e20');
+  }
+
+  destroy(fromScene) {
+    if (this.visual) this.visual.destroy();
+    if (this.glow) this.glow.destroy();
+    if (this.rune) this.rune.destroy();
+    super.destroy(fromScene);
   }
 }
