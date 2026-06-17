@@ -1,35 +1,100 @@
-// Sound-effect placeholder hooks.
-//
-// The game ships without audio assets, so `playSfx` is a safe no-op until real
-// sounds are added. To enable a sound, drop a file in src/assets/audio/ and load
-// it in a scene's preload(), e.g.:
-//
-//   preload() {
-//     this.load.audio(SFX.JUMP, 'src/assets/audio/jump.mp3');
-//   }
-//
-// Once a clip with the matching key is in the cache, every existing
-// `playSfx(scene, SFX.JUMP)` call below will start playing it automatically —
-// no other code changes required.
+import menuMusicUrl from '../assets/audio/menu-music.mp3';
+import backgroundMusicUrl from '../assets/audio/background-music.mp3';
+
+import jumpUrl from '../assets/audio/jump.mp3';
+import stepsUrl from '../assets/audio/steps.mp3';
+import buttonUrl from '../assets/audio/button.mp3';
+import crystalUrl from '../assets/audio/crystal.mp3';
+import gateUrl from '../assets/audio/gate.mp3';
+import winUrl from '../assets/audio/win.mp3';
+import damageUrl from '../assets/audio/damage.mp3';
+import doorUrl from '../assets/audio/door.mp3';
+
+export const MUSIC = {
+  MENU: 'music-menu',
+  LEVEL: 'music-level'
+};
 
 export const SFX = {
   JUMP: 'sfx-jump',
+  STEPS: 'sfx-steps',
   CRYSTAL: 'sfx-crystal',
   BUTTON: 'sfx-button',
   GATE: 'sfx-gate',
-  WIN: 'sfx-win'
+  WIN: 'sfx-win',
+  DAMAGE: 'sfx-damage',
+  DOOR: 'sfx-door'
 };
 
-/**
- * Play a sound effect if its asset has been loaded; otherwise do nothing.
- * @param {Phaser.Scene} scene
- * @param {string} key  one of SFX.*
- * @param {object} [config]  optional Phaser sound config (volume, rate, …)
- */
-export function playSfx(scene, key, config) {
-  if (!scene || !scene.sound) return;
-  // Only play when a real clip is present, so the placeholder stays silent.
+const AUDIO_FILES = {
+  [MUSIC.MENU]: menuMusicUrl,
+  [MUSIC.LEVEL]: backgroundMusicUrl,
+
+  [SFX.JUMP]: jumpUrl,
+  [SFX.STEPS]: stepsUrl,
+  [SFX.BUTTON]: buttonUrl,
+  [SFX.CRYSTAL]: crystalUrl,
+  [SFX.GATE]: gateUrl,
+  [SFX.WIN]: winUrl,
+  [SFX.DAMAGE]: damageUrl,
+  [SFX.DOOR]: doorUrl
+};
+
+export function preloadAudio(scene) {
+  if (!scene || !scene.load || !scene.cache) return;
+
+  Object.entries(AUDIO_FILES).forEach(([key, url]) => {
+    if (!scene.cache.audio.exists(key)) {
+      scene.load.audio(key, url);
+    }
+  });
+}
+
+export function playSfx(scene, key, config = {}) {
+  if (!scene || !scene.sound || !scene.cache) return;
+
   if (scene.cache.audio.exists(key)) {
-    scene.sound.play(key, config);
+    scene.sound.play(key, {
+      volume: 0.6,
+      ...config
+    });
+  }
+}
+
+export function playMusic(scene, key, config = {}) {
+  if (!scene || !scene.sound || !scene.cache) return null;
+  if (!scene.cache.audio.exists(key)) return null;
+
+  const existingMusic = scene.sound.get(key);
+
+  if (existingMusic) {
+    if (!existingMusic.isPlaying) {
+      existingMusic.play({
+        loop: true,
+        volume: 0.35,
+        ...config
+      });
+    }
+
+    return existingMusic;
+  }
+
+  const music = scene.sound.add(key, {
+    loop: true,
+    volume: 0.35,
+    ...config
+  });
+
+  music.play();
+  return music;
+}
+
+export function stopMusic(scene, key) {
+  if (!scene || !scene.sound) return;
+
+  const music = scene.sound.get(key);
+
+  if (music && music.isPlaying) {
+    music.stop();
   }
 }

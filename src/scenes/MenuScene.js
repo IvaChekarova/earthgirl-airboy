@@ -4,6 +4,7 @@ import Phaser from 'phaser';
 import { COLORS } from '../config/gameConfig.js';
 import { generatePlaceholderTextures, preloadReferenceAssets, TEX } from '../utils/textures.js';
 import { generateCharacterTextures, preloadCharacterReference } from '../utils/characterTextures.js';
+import { MUSIC, SFX, preloadAudio, playMusic, playSfx, stopMusic } from '../utils/audio.js';
 
 export default class MenuScene extends Phaser.Scene {
   constructor() {
@@ -13,6 +14,7 @@ export default class MenuScene extends Phaser.Scene {
   preload() {
     preloadReferenceAssets(this);
     preloadCharacterReference(this);
+    preloadAudio(this);
   }
 
   create() {
@@ -22,6 +24,10 @@ export default class MenuScene extends Phaser.Scene {
 
     // Clean up any UI overlay left over from a previous play session.
     if (this.scene.isActive('UIScene')) this.scene.stop('UIScene');
+
+    // Audio only — menu music starts here and level music stops if it was playing.
+    stopMusic(this, MUSIC.LEVEL);
+    playMusic(this, MUSIC.MENU, { volume: 0.35 });
 
     // Ancient temple background.
     this.add.rectangle(0, 0, width, height, 0x111111).setOrigin(0);
@@ -111,6 +117,7 @@ export default class MenuScene extends Phaser.Scene {
     container.on('pointerup', () => {
       bg.setScale(1.05);
       rim.setScale(1.05);
+      playSfx(this, SFX.BUTTON, { volume: 0.5 });
       onClick();
     });
 
@@ -155,6 +162,7 @@ export default class MenuScene extends Phaser.Scene {
         new Phaser.Geom.Rectangle(-size / 2, -size / 2, size, size),
         Phaser.Geom.Rectangle.Contains
       );
+
       container.on('pointerover', () => {
         bg.setFillStyle(0x2a3350);
         this.input.setDefaultCursor('pointer');
@@ -163,7 +171,10 @@ export default class MenuScene extends Phaser.Scene {
         bg.setFillStyle(0x1d2233);
         this.input.setDefaultCursor('default');
       });
-      container.on('pointerup', () => this.scene.start(key));
+      container.on('pointerup', () => {
+        playSfx(this, SFX.BUTTON, { volume: 0.5 });
+        this.scene.start(key);
+      });
 
       cx += size + gap;
     });

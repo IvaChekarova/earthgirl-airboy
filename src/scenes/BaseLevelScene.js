@@ -14,7 +14,7 @@ import {
   registerCharacterAnimations
 } from '../utils/characterTextures.js';
 import { gameEvents, EVENTS } from '../utils/events.js';
-import { playSfx, SFX } from '../utils/audio.js';
+import { MUSIC, SFX, preloadAudio, playMusic, playSfx, stopMusic } from '../utils/audio.js';
 import Earthgirl from '../entities/Earthgirl.js';
 import Airboy from '../entities/Airboy.js';
 import Crystal from '../entities/Crystal.js';
@@ -39,6 +39,7 @@ export default class BaseLevelScene extends Phaser.Scene {
   preload() {
     preloadReferenceAssets(this);
     preloadCharacterReference(this);
+    preloadAudio(this);
   }
 
   create() {
@@ -46,6 +47,10 @@ export default class BaseLevelScene extends Phaser.Scene {
     this.levelWidth = this.LEVEL_WIDTH ?? width;
     this.levelHeight = this.LEVEL_HEIGHT ?? height;
     this.completed = false;
+
+    // Audio only — level music starts here and menu music stops if it was playing.
+    stopMusic(this, MUSIC.MENU);
+    playMusic(this, MUSIC.LEVEL, { volume: 0.28 });
 
     // 1. Runtime textures and reference-image character crops.
     generatePlaceholderTextures(this);
@@ -77,6 +82,7 @@ export default class BaseLevelScene extends Phaser.Scene {
     // 5. Players. Subclass must define earthSpawn / airSpawn.
     this.earthgirl = new Earthgirl(this, this.earthSpawn.x, this.earthSpawn.y);
     this.airboy = new Airboy(this, this.airSpawn.x, this.airSpawn.y);
+
     // Remember where each character starts so a hazard can respawn just them.
     this.earthgirl.spawnPoint = { ...this.earthSpawn };
     this.airboy.spawnPoint = { ...this.airSpawn };
@@ -89,6 +95,7 @@ export default class BaseLevelScene extends Phaser.Scene {
     if (!this.scene.isActive('UIScene')) {
       this.scene.launch('UIScene');
     }
+
     gameEvents.emit(EVENTS.LEVEL_STARTED, {
       key: this.meta.key,
       number: this.meta.number,
@@ -96,6 +103,7 @@ export default class BaseLevelScene extends Phaser.Scene {
       next: this.meta.next,
       totals: { ...this.crystalTotals }
     });
+
     this.emitCrystalUpdate();
 
     // Restart / menu hotkeys available in every level.
@@ -109,7 +117,9 @@ export default class BaseLevelScene extends Phaser.Scene {
       [EVENTS.NAV_NEXT]: () => this.goToNext(),
       [EVENTS.NAV_MENU]: () => this.goToMenu()
     };
+
     Object.entries(this.navHandlers).forEach(([evt, fn]) => gameEvents.on(evt, fn));
+
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
       Object.entries(this.navHandlers).forEach(([evt, fn]) => gameEvents.off(evt, fn));
     });
@@ -121,6 +131,7 @@ export default class BaseLevelScene extends Phaser.Scene {
   }
 
   goToMenu() {
+    stopMusic(this, MUSIC.LEVEL);
     this.scene.stop('UIScene');
     this.scene.start('MenuScene');
   }
@@ -139,6 +150,7 @@ export default class BaseLevelScene extends Phaser.Scene {
     const art = this.getTempleArt();
 
     this.add.rectangle(0, 0, this.levelWidth, this.levelHeight, 0x111111, 1).setOrigin(0).setDepth(-20);
+
     this.add
       .tileSprite(this.levelWidth / 2, this.levelHeight / 2, this.levelWidth, this.levelHeight, art.wall)
       .setDepth(-19)
@@ -157,6 +169,7 @@ export default class BaseLevelScene extends Phaser.Scene {
     const visualHeight = texture === TEX.GROUND ? 30 : 26;
     const surfaceY = y - height / 2;
     const visualY = surfaceY + visualHeight / 2;
+
     const plat = this.platforms.create(x, y, TEX.PIXEL);
     plat.setDisplaySize(width, height);
     plat.refreshBody();
@@ -168,10 +181,12 @@ export default class BaseLevelScene extends Phaser.Scene {
         .setDepth(0)
         .setAlpha(0.55);
     }
+
     plat.visual = this.add
       .image(x, visualY, visualTexture)
       .setDisplaySize(visualWidth, visualHeight)
       .setDepth(1);
+
     return plat;
   }
 
@@ -182,8 +197,10 @@ export default class BaseLevelScene extends Phaser.Scene {
 
   addCrystal(x, y, element) {
     const crystal = new Crystal(this, x, y, element);
+
     if (element === 'air') this.airCrystals.add(crystal);
     else this.earthCrystals.add(crystal);
+
     this.crystalTotals[element] += 1;
     return crystal;
   }
@@ -224,6 +241,7 @@ export default class BaseLevelScene extends Phaser.Scene {
     this.physics.add.existing(zone, true);
     zone.hazardVisual = visual;
     this.hazards.push(zone);
+
     return zone;
   }
 
@@ -236,6 +254,7 @@ export default class BaseLevelScene extends Phaser.Scene {
 
     const body = this.add.tileSprite(0, visualOffsetY, visualWidth, visualHeight, TEX.LAVA);
     const glow = this.add.rectangle(0, visualOffsetY - visualHeight / 2 + 8, visualWidth, 8, 0xffc400, 0.24);
+
     c.add([body, glow]);
 
     this.tweens.add({
@@ -245,6 +264,7 @@ export default class BaseLevelScene extends Phaser.Scene {
       repeat: -1,
       ease: 'Linear'
     });
+
     this.tweens.add({
       targets: glow,
       alpha: 0.55,
@@ -255,17 +275,20 @@ export default class BaseLevelScene extends Phaser.Scene {
       ease: 'Sine.easeInOut'
     });
 
-    const emitter = this.add.particles(x, y + visualOffsetY - visualHeight / 2 + 8, TEX.PIXEL, {
-      x: { min: -visualWidth / 2 + 4, max: visualWidth / 2 - 4 },
-      lifespan: 650,
-      speedY: { min: -35, max: -10 },
-      speedX: { min: -10, max: 10 },
-      scale: { start: 3, end: 0 },
-      alpha: { start: 0.75, end: 0 },
-      tint: [0xffc400, 0xff6d00, 0xff2a00],
-      frequency: 180,
-      quantity: 1
-    }).setDepth(2);
+    const emitter = this.add
+      .particles(x, y + visualOffsetY - visualHeight / 2 + 8, TEX.PIXEL, {
+        x: { min: -visualWidth / 2 + 4, max: visualWidth / 2 - 4 },
+        lifespan: 650,
+        speedY: { min: -35, max: -10 },
+        speedX: { min: -10, max: 10 },
+        scale: { start: 3, end: 0 },
+        alpha: { start: 0.75, end: 0 },
+        tint: [0xffc400, 0xff6d00, 0xff2a00],
+        frequency: 180,
+        quantity: 1
+      })
+      .setDepth(2);
+
     c.lavaEmitter = emitter;
 
     return c;
@@ -279,6 +302,7 @@ export default class BaseLevelScene extends Phaser.Scene {
     this.players.forEach((player) => {
       this.physics.add.collider(player, this.platforms);
       this.physics.add.collider(player, this.movingPlatforms);
+
       // Closed gates block passage; an opened gate disables its body so the
       // collider simply lets the character through.
       this.gateList.forEach((gate) => this.physics.add.collider(player, gate));
@@ -310,6 +334,9 @@ export default class BaseLevelScene extends Phaser.Scene {
     if (player._respawning) return;
     player._respawning = true;
 
+    playSfx(this, SFX.DAMAGE, { volume: 0.65 });
+
+    player.stopStepSound?.();
     player.setVelocity(0, 0);
     player.setPosition(player.spawnPoint.x, player.spawnPoint.y);
 
@@ -331,6 +358,7 @@ export default class BaseLevelScene extends Phaser.Scene {
     // Show the WHOLE level at once — no scrolling. If the level is larger than
     // the viewport we zoom out to fit it; we never zoom in past 1:1.
     const zoom = Math.min(1, this.scale.width / this.levelWidth, this.scale.height / this.levelHeight);
+
     cam.setZoom(zoom);
     cam.centerOn(this.levelWidth / 2, this.levelHeight / 2);
   }
@@ -350,11 +378,12 @@ export default class BaseLevelScene extends Phaser.Scene {
   emitCrystalUpdate() {
     const collected = this.crystalCollected.earth + this.crystalCollected.air;
     const total = this.crystalTotals.earth + this.crystalTotals.air;
+
     gameEvents.emit(EVENTS.CRYSTAL_COLLECTED, {
       collected,
       total,
       perElement: {
-        earth: { ...{ got: this.crystalCollected.earth, total: this.crystalTotals.earth } },
+        earth: { got: this.crystalCollected.earth, total: this.crystalTotals.earth },
         air: { got: this.crystalCollected.air, total: this.crystalTotals.air }
       }
     });
@@ -376,14 +405,21 @@ export default class BaseLevelScene extends Phaser.Scene {
       door.setReady(ready);
 
       const player = element === 'air' ? this.airboy : this.earthgirl;
+      const wasAtDoor = player.atDoor;
+
       const atDoor =
         ready &&
         Phaser.Geom.Intersects.RectangleToRectangle(
           player.getBounds(),
           door.getBounds()
         );
+
       player.atDoor = atDoor;
       door.setOccupied(atDoor);
+
+      if (atDoor && !wasAtDoor) {
+        playSfx(this, SFX.DOOR, { volume: 0.55 });
+      }
 
       if (!atDoor) bothSatisfied = false;
     });
@@ -398,6 +434,7 @@ export default class BaseLevelScene extends Phaser.Scene {
 
     // Freeze the players.
     this.players.forEach((p) => {
+      p.stopStepSound?.();
       p.setVelocity(0, 0);
       p.body.setAllowGravity(false);
       p.setActive(false);
@@ -407,6 +444,7 @@ export default class BaseLevelScene extends Phaser.Scene {
     // chooses Next / Restart / Menu there (handled via NAV_* events).
     playSfx(this, SFX.WIN);
     this.cameras.main.flash(400, 255, 255, 255);
+
     gameEvents.emit(EVENTS.LEVEL_COMPLETE, {
       key: this.meta.key,
       number: this.meta.number,

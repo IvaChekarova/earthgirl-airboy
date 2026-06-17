@@ -38,14 +38,17 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
     // sprite's feet (which render near the frame bottom) so the character
     // stands on platforms instead of sinking through them.
     this.setCollideWorldBounds(true);
+
     const bodyW = PLAYER.WIDTH / this.baseScale;
     const bodyH = PLAYER.HEIGHT / this.baseScale;
-    const footOverlap = 6; // px the feet visually overlap the ground, in world units
+    const footOverlap = 6;
+
     this.body.setSize(bodyW, bodyH, false);
     this.body.setOffset(
       (this.width - bodyW) / 2,
       (PLAYER.DISPLAY_HEIGHT - PLAYER.HEIGHT - footOverlap) / this.baseScale
     );
+
     this.setDragX(1200);
     this.setMaxVelocity(PLAYER.SPEED, 1200);
 
@@ -58,6 +61,7 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
     this._landTimer = 0;
 
     this.nameTag = null;
+    this.stepSound = null;
   }
 
   /**
@@ -85,6 +89,9 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
     // Visuals only — never touches the physics body.
     this.updateAnimation(onGround);
 
+    // Audio only — does not affect movement, physics or gameplay.
+    this.updateStepSound(onGround);
+
     if (this.nameTag) this.nameTag.setPosition(this.x, this.y - PLAYER.HEIGHT * 0.7);
   }
 
@@ -101,7 +108,9 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
 
     // Landing pulse when we just touched down.
     if (onGround && !this._wasOnGround) this._landTimer = 150;
+
     this._wasOnGround = onGround;
+
     if (this._landTimer > 0) this._landTimer -= delta;
 
     if (this._landTimer > 0) this.play(`${p}-land`, true);
@@ -112,24 +121,61 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
     // Target squash/stretch.
     let tsx = 1;
     let tsy = 1;
+
     if (this._landTimer > 0) {
       tsx = 1.18;
-      tsy = 0.82; // squash on landing
+      tsy = 0.82;
     } else if (!onGround) {
       if (vy < -40) {
         tsx = 0.88;
-        tsy = 1.14; // stretch while rising
+        tsy = 1.14;
       } else if (vy > 40) {
         tsx = 0.95;
-        tsy = 1.06; // gentle stretch while falling
+        tsy = 1.06;
       }
     }
+
     this.scaleX = Phaser.Math.Linear(this.scaleX, tsx * this.baseScale, 0.3);
     this.scaleY = Phaser.Math.Linear(this.scaleY, tsy * this.baseScale, 0.3);
   }
 
+  updateStepSound(onGround) {
+    if (!this.scene.cache.audio.exists(SFX.STEPS)) return;
+
+    const movingOnGround = onGround && Math.abs(this.body.velocity.x) > 12;
+
+    if (!this.stepSound) {
+      this.stepSound = this.scene.sound.add(SFX.STEPS, {
+        loop: true,
+        volume: 0.18
+      });
+    }
+
+    if (movingOnGround) {
+      if (!this.stepSound.isPlaying) {
+        this.stepSound.play();
+      }
+    } else {
+      this.stopStepSound();
+    }
+  }
+
+  stopStepSound() {
+    if (this.stepSound && this.stepSound.isPlaying) {
+      this.stepSound.stop();
+    }
+  }
+
   destroy(fromScene) {
+    this.stopStepSound();
+
+    if (this.stepSound) {
+      this.stepSound.destroy();
+      this.stepSound = null;
+    }
+
     if (this.nameTag) this.nameTag.destroy();
+
     super.destroy(fromScene);
   }
 }

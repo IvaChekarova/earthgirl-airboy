@@ -4,6 +4,7 @@
 
 import Phaser from 'phaser';
 import { TEX } from '../utils/textures.js';
+import { playSfx, SFX } from '../utils/audio.js';
 
 export default class Gate extends Phaser.Physics.Arcade.Sprite {
   /**
@@ -31,6 +32,7 @@ export default class Gate extends Phaser.Physics.Arcade.Sprite {
       .image(x, y, TEX.GATE)
       .setDisplaySize(Math.max(14, width - 6), height)
       .setDepth(2);
+
     this.closedY = y;
     this.openY = y - height - 20;
     this._tween = null;
@@ -40,15 +42,22 @@ export default class Gate extends Phaser.Physics.Arcade.Sprite {
 
   setTint(...args) {
     super.setTint(...args);
+
     if (this.visual) this.visual.setTint(...args);
+
     return this;
   }
 
   open() {
     if (this.isOpen) return;
+
     this.isOpen = true;
+    playSfx(this.scene, SFX.GATE, { volume: 0.55 });
+
     this.body.enable = false;
+
     if (this._tween) this._tween.stop();
+
     this._tween = this.scene.tweens.add({
       targets: this.visual,
       y: this.openY,
@@ -59,9 +68,14 @@ export default class Gate extends Phaser.Physics.Arcade.Sprite {
 
   close() {
     if (!this.isOpen) return;
+
     this.isOpen = false;
+    playSfx(this.scene, SFX.GATE, { volume: 0.45 });
+
     this.body.enable = true;
+
     if (this._tween) this._tween.stop();
+
     this._tween = this.scene.tweens.add({
       targets: this.visual,
       y: this.closedY,
@@ -73,6 +87,7 @@ export default class Gate extends Phaser.Physics.Arcade.Sprite {
   destroy(fromScene) {
     if (this._tween) this._tween.stop();
     if (this.visual) this.visual.destroy();
+
     super.destroy(fromScene);
   }
 }
