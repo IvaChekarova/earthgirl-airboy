@@ -1,37 +1,40 @@
-// A blocking gate (a wall that opens). Unlike a Door (an exit), a Gate
-// physically blocks the corridor until a Button opens it. While closed its
-// static body collides with players; opening disables the body and fades it
-// out so a character can walk through.
+// Gate — a blocking wall that opens when a button is pressed. While closed its
+// body collides with players; opening disables the body (so characters pass
+// through) and fades it out. Reused across levels.
 
 import Phaser from 'phaser';
-import { playSfx, SFX } from '../utils/audio.js';
+import { TEX } from '../utils/textures.js';
 
-export default class Gate extends Phaser.GameObjects.Rectangle {
+export default class Gate extends Phaser.Physics.Arcade.Sprite {
   /**
    * @param {Phaser.Scene} scene
-   * @param {number} x      centre x
-   * @param {number} y      centre y
+   * @param {number} x
+   * @param {number} y
    * @param {number} width
    * @param {number} height
-   * @param {number} [color]
+   * @param {'earth'|'air'} [element]  tints the gate to match a character
    */
-  constructor(scene, x, y, width, height, color = 0x9c6b3c) {
-    super(scene, x, y, width, height, color);
+  constructor(scene, x, y, width, height, element = 'air') {
+    super(scene, x, y, TEX.PLATFORM);
 
     scene.add.existing(this);
-    scene.physics.add.existing(this, true); // `true` = static body
+    scene.physics.add.existing(this);
+
+    this.setDisplaySize(width, height);
+    this.body.setSize(this.displayWidth, this.displayHeight);
+    this.body.setAllowGravity(false);
+    this.body.setImmovable(true);
+    this.setDepth(2);
+    this.setTint(element === 'air' ? 0x1565c0 : 0x2e7d32);
 
     this.isOpen = false;
-    this.setStrokeStyle(3, 0xffe0a0, 0.6);
-    this.setDepth(2);
   }
 
   open() {
     if (this.isOpen) return;
     this.isOpen = true;
     this.body.enable = false;
-    playSfx(this.scene, SFX.GATE);
-    this.scene.tweens.add({ targets: this, alpha: 0.12, duration: 200 });
+    this.scene.tweens.add({ targets: this, alpha: 0.15, duration: 200 });
   }
 
   close() {
