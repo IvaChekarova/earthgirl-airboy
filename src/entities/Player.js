@@ -33,6 +33,11 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
     // Gameplay state.
     this.atDoor = false;
 
+    // Animation state. `animPrefix` ('eg' | 'ab') is set by the subclass.
+    this.animPrefix = 'eg';
+    this._wasOnGround = true;
+    this._landTimer = 0;
+
     // A small name tag that floats above the character.
     this.nameTag = scene.add
       .text(x, y - PLAYER.HEIGHT, label, {
@@ -66,8 +71,51 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
       playSfx(this.scene, SFX.JUMP);
     }
 
+    // Visuals only — never touches the physics body.
+    this.updateAnimation(onGround);
+
     // Keep the floating name tag glued to the character.
     this.nameTag.setPosition(this.x, this.y - PLAYER.HEIGHT * 0.7);
+  }
+
+  /**
+   * Pick the idle / walk / jump / land animation from the current state, plus a
+   * squash-and-stretch via SCALE. Scale is purely cosmetic in Arcade physics —
+   * the collision body (set via setSize) is unaffected, so gameplay is identical.
+   */
+  updateAnimation(onGround) {
+    const p = this.animPrefix;
+    const vy = this.body.velocity.y;
+    const moving = Math.abs(this.body.velocity.x) > 12;
+    const delta = this.scene.game.loop.delta;
+
+    // Landing pulse when we just touched down.
+    if (onGround && !this._wasOnGround) this._landTimer = 150;
+    this._wasOnGround = onGround;
+    if (this._landTimer > 0) this._landTimer -= delta;
+
+    if (this._landTimer > 0) this.play(`${p}-land`, true);
+    else if (!onGround) this.play(`${p}-jump`, true);
+    else if (moving) this.play(`${p}-walk`, true);
+    else this.play(`${p}-idle`, true);
+
+    // Target squash/stretch.
+    let tsx = 1;
+    let tsy = 1;
+    if (this._landTimer > 0) {
+      tsx = 1.18;
+      tsy = 0.82; // squash on landing
+    } else if (!onGround) {
+      if (vy < -40) {
+        tsx = 0.88;
+        tsy = 1.14; // stretch while rising
+      } else if (vy > 40) {
+        tsx = 0.95;
+        tsy = 1.06; // gentle stretch while falling
+      }
+    }
+    this.scaleX = Phaser.Math.Linear(this.scaleX, tsx, 0.3);
+    this.scaleY = Phaser.Math.Linear(this.scaleY, tsy, 0.3);
   }
 
   destroy(fromScene) {

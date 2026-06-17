@@ -8,6 +8,11 @@
 
 import Phaser from 'phaser';
 import { generatePlaceholderTextures, TEX } from '../utils/textures.js';
+import {
+  generateCharacterTextures,
+  preloadCharacterReference,
+  registerCharacterAnimations
+} from '../utils/characterTextures.js';
 import { gameEvents, EVENTS } from '../utils/events.js';
 import { playSfx, SFX } from '../utils/audio.js';
 import Earthgirl from '../entities/Earthgirl.js';
@@ -31,14 +36,20 @@ export default class BaseLevelScene extends Phaser.Scene {
     this.meta = meta;
   }
 
+  preload() {
+    preloadCharacterReference(this);
+  }
+
   create() {
     const { width, height } = this.scale;
     this.levelWidth = this.LEVEL_WIDTH ?? width;
     this.levelHeight = this.LEVEL_HEIGHT ?? height;
     this.completed = false;
 
-    // 1. Placeholder textures (no external assets needed).
+    // 1. Runtime textures and reference-image character crops.
     generatePlaceholderTextures(this);
+    generateCharacterTextures(this);
+    registerCharacterAnimations(this);
 
     // 2. Physics groups shared by every level.
     this.platforms = this.physics.add.staticGroup();

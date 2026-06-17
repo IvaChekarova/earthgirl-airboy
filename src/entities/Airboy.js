@@ -2,7 +2,6 @@
 
 import Phaser from 'phaser';
 import Player from './Player.js';
-import { TEX } from '../utils/textures.js';
 
 export default class Airboy extends Player {
   constructor(scene, x, y) {
@@ -13,8 +12,10 @@ export default class Airboy extends Player {
       up: keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.UP)
     };
 
-    super(scene, x, y, TEX.AIRBOY, controls, 'Airboy');
+    super(scene, x, y, 'ab-idle-0', controls, 'Airboy');
 
     this.element = 'air';
+    this.animPrefix = 'ab';
+    this.play('ab-idle');
   }
 }

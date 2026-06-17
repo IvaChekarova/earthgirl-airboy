@@ -1,7 +1,6 @@
-// Earthgirl — the green character controlled with WASD.
+// Earthgirl — the green plant-girl, controlled with WASD.
 
 import Player from './Player.js';
-import { TEX } from '../utils/textures.js';
 
 export default class Earthgirl extends Player {
   constructor(scene, x, y) {
@@ -13,9 +12,11 @@ export default class Earthgirl extends Player {
       up: keyboard.addKey('W')
     };
 
-    super(scene, x, y, TEX.EARTHGIRL, controls, 'Earthgirl');
+    super(scene, x, y, 'eg-idle-0', controls, 'Earthgirl');
 
     // Tag so collision callbacks can tell who is who.
     this.element = 'earth';
+    this.animPrefix = 'eg';
+    this.play('eg-idle');
   }
 }

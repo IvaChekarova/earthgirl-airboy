@@ -2,16 +2,22 @@
 
 import Phaser from 'phaser';
 import { COLORS } from '../config/gameConfig.js';
-import { generatePlaceholderTextures, TEX } from '../utils/textures.js';
+import { generatePlaceholderTextures } from '../utils/textures.js';
+import { generateCharacterTextures, preloadCharacterReference } from '../utils/characterTextures.js';
 
 export default class MenuScene extends Phaser.Scene {
   constructor() {
     super('MenuScene');
   }
 
+  preload() {
+    preloadCharacterReference(this);
+  }
+
   create() {
     const { width, height } = this.scale;
     generatePlaceholderTextures(this);
+    generateCharacterTextures(this);
 
     // Clean up any UI overlay left over from a previous play session.
     if (this.scene.isActive('UIScene')) this.scene.stop('UIScene');
@@ -21,8 +27,8 @@ export default class MenuScene extends Phaser.Scene {
     this.add.rectangle(0, height - 70, width, 70, 0x0e1322).setOrigin(0);
 
     // Two character chips beside the title for flavour.
-    this.add.image(width / 2 - 200, height / 2 - 96, TEX.EARTHGIRL).setScale(1.4);
-    this.add.image(width / 2 + 200, height / 2 - 96, TEX.AIRBOY).setScale(1.4);
+    this.add.image(width / 2 - 200, height / 2 - 96, 'eg-idle-0').setScale(1.4);
+    this.add.image(width / 2 + 200, height / 2 - 96, 'ab-idle-0').setScale(1.4);
 
     // Title.
     this.add

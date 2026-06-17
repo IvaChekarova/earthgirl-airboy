@@ -49,6 +49,7 @@ export default class StonePillar extends Phaser.GameObjects.Rectangle {
     this.speed = opts.speed ?? 200;
     this.targetY = parkedY;
     this.isRaised = false;
+    this._moving = false; // only true while travelling to a new target
   }
 
   /** true → drive up to the raised position; false → drive back down. */
@@ -57,20 +58,20 @@ export default class StonePillar extends Phaser.GameObjects.Rectangle {
     if (value === this.isRaised) return this;
     this.isRaised = value;
     this.targetY = value ? this.raisedY : this.parkedY;
+    this._moving = true;
     return this;
   }
 
-  /** Called every frame by the scene — eases toward the target, then settles. */
+  /** Called every frame by the scene — drives toward the target, then STOPS and
+   *  leaves the body completely alone (so a rider stays grounded and can jump,
+   *  and the pillar never micro-bounces). */
   tick(delta) {
-    const dy = this.targetY - this.y;
+    if (!this._moving) return;
 
-    // Within a small window: snap exactly and STOP. Without this the body never
-    // lands precisely on the target and micro-bounces forever (which also makes
-    // a rider's ground contact flicker, so they cannot jump).
-    if (Math.abs(dy) <= 1.5) {
-      if (this.body.velocity.y !== 0 || this.y !== this.targetY) {
-        this.body.reset(this.x, this.targetY);
-      }
+    const dy = this.targetY - this.y;
+    if (Math.abs(dy) <= 2) {
+      this.body.setVelocityY(0);
+      this._moving = false; // settled — don't touch the body again
       return;
     }
 
