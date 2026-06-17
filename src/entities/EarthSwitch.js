@@ -23,7 +23,7 @@ export default class EarthSwitch extends Phaser.Physics.Arcade.Sprite {
    * @param {(active:boolean)=>void} [opts.onChange]
    */
   constructor(scene, x, y, opts = {}) {
-    super(scene, x, y, TEX.BUTTON_EARTH);
+    super(scene, x, y, TEX.EARTH_SWITCH);
 
     scene.add.existing(this);
     scene.physics.add.existing(this);
@@ -34,11 +34,16 @@ export default class EarthSwitch extends Phaser.Physics.Arcade.Sprite {
     this.setVisible(false);
     this.body.setSize(48, 18);
     this.setDepth(3);
+    // The special earth-rune plate (only Earthgirl can use it). The glowing leaf
+    // is part of the art, so no separate rune is drawn.
+    // Sit the plate flush on the ground (bottom anchored just into the floor so
+    // there is never a gap beneath it).
     this.visual = scene.add
-      .image(x, y + 9, TEX.BUTTON_EARTH)
+      .image(x, y + 8, TEX.EARTH_SWITCH)
       .setOrigin(0.5, 1)
-      .setDisplaySize(36, 13)
-      .setDepth(3);
+      .setDisplaySize(58, 22)
+      .setDepth(3)
+      .setTint(0x9fc4a3); // dim until activated
 
     this.latch = opts.latch ?? false;
     this.onChange = opts.onChange ?? (() => {});
@@ -47,15 +52,11 @@ export default class EarthSwitch extends Phaser.Physics.Arcade.Sprite {
     this._touched = false;
     this._grace = 0; // short hold-over so the overlap can't flicker the switch
 
-    // Glowing rune above the pad.
+    // Soft glow behind the plate, shown only while active.
     this.glow = scene.add
-      .rectangle(x, this.y - 8, 34, 18, 0x66bb6a, 0)
+      .rectangle(x, y - 9, 56, 22, 0x66bb6a, 0)
       .setStrokeStyle(2, 0x9cffb0, 0)
       .setDepth(2);
-    this.rune = scene.add
-      .text(x, this.y - 9, '⟐', { fontFamily: 'monospace', fontSize: '13px', color: '#1b5e20' })
-      .setOrigin(0.5)
-      .setDepth(4);
   }
 
   /** Called by the scene's Earthgirl-only overlap each frame she stands on it. */
@@ -82,15 +83,15 @@ export default class EarthSwitch extends Phaser.Physics.Arcade.Sprite {
   setVisualActive(on) {
     this.glow.setStrokeStyle(2, 0x9cffb0, on ? 1 : 0);
     this.glow.setFillStyle(0x66bb6a, on ? 0.3 : 0);
-    this.setTexture(on ? TEX.BUTTON_EARTH : TEX.BUTTON_EARTH);
-    this.visual.setDisplaySize(36, on ? 9 : 13);
-    this.rune.setColor(on ? '#0b3d0b' : '#1b5e20');
+    // Brighten and press the plate down a touch when active.
+    if (on) this.visual.clearTint();
+    else this.visual.setTint(0x9fc4a3);
+    this.visual.setDisplaySize(58, on ? 19 : 22);
   }
 
   destroy(fromScene) {
     if (this.visual) this.visual.destroy();
     if (this.glow) this.glow.destroy();
-    if (this.rune) this.rune.destroy();
     super.destroy(fromScene);
   }
 }

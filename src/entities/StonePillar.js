@@ -33,11 +33,20 @@ export default class StonePillar extends Phaser.GameObjects.Rectangle {
     const parkedTop = opts.parkedTop ?? groundY + 50;
 
     const parkedY = parkedTop + height / 2; // centre when hidden/down
-    const raisedY = groundY - height / 2; // centre when fully up (top = groundY - height)
+    // Raised top defaults to one full height above the floor, with the base sunk
+    // a little into the floor so it reads as planted (no gap). A stepping box
+    // passes its own raisedTop so it stands IN the lava with its top poking out.
+    const groundOverlap = 10;
+    const raisedTop = opts.raisedTop ?? groundY - height + groundOverlap;
+    const raisedY = raisedTop + height / 2;
 
     super(scene, opts.x, parkedY, width, height, 0x8d6e63);
     scene.add.existing(this);
     scene.physics.add.existing(this); // body sized exactly to the rectangle
+    const bodyWidth = Math.round(width * 0.6);
+    const bodyHeight = Math.round(height * 0.92);
+    this.body.setSize(bodyWidth, bodyHeight);
+    this.body.setOffset((width - bodyWidth) / 2, height - bodyHeight);
 
     this.body.setAllowGravity(false);
     this.body.setImmovable(true);
@@ -50,8 +59,11 @@ export default class StonePillar extends Phaser.GameObjects.Rectangle {
       .tileSprite(opts.x, groundY + 8, width + 20, 16, TEX.SHADOW)
       .setDepth(-2)
       .setAlpha(0.45);
+    // A complete column (or box) image scaled to the body size — not tiled — so
+    // the full artwork shows. pMid passes TEX.BOX; tall pillars use TEX.PILLAR.
     this.visual = scene.add
-      .tileSprite(opts.x, parkedY, width, height, TEX.PILLAR)
+      .image(opts.x, parkedY, opts.texture ?? TEX.PILLAR)
+      .setDisplaySize(width, height)
       .setDepth(-1);
 
     this.raisedY = raisedY;

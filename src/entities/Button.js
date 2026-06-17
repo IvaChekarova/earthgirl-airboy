@@ -30,7 +30,7 @@ export default class Button extends Phaser.Physics.Arcade.Sprite {
     this.body.setSize(48, 14);
     this.setDepth(3);
     this.visual = scene.add
-      .image(x, y + 9, texture)
+      .image(x, y + 12, texture)
       .setOrigin(0.5, 1)
       .setDisplaySize(36, 13)
       .setDepth(3);

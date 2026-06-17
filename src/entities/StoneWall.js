@@ -23,17 +23,19 @@ export default class StoneWall extends Phaser.Physics.Arcade.Image {
     const bottomY = opts.bottomY ?? 500;
     const height = bottomY - opts.topY;
     const closedY = opts.topY + height / 2;
-    const art = scene.getTempleArt ? scene.getTempleArt() : { wall: TEX.WALL_MOSS };
+    const width = opts.width ?? 32;
 
-    super(scene, opts.x, closedY, art.wall);
+    // The blocking slab uses the GATE artwork (a tall portcullis-like bar).
+    super(scene, opts.x, closedY, TEX.GATE);
 
     scene.add.existing(this);
-    this.setDisplaySize(opts.width ?? 32, height);
+    this.setDisplaySize(width, height);
     this.setDepth(-1);
     this.setVisible(false);
 
     this.visual = scene.add
-      .tileSprite(opts.x, closedY, opts.width ?? 32, height, art.wall)
+      .image(opts.x, closedY, TEX.GATE)
+      .setDisplaySize(width, height)
       .setDepth(-1);
 
     scene.physics.add.existing(this, true); // static body at the closed position

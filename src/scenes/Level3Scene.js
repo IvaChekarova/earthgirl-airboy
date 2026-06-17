@@ -18,23 +18,24 @@
 //        upper ledge UP1 and drops past Wall W1.
 //   B  BUTTON B (Airboy held, past W1) → opens WALL W1 → EARTHGIRL walks through
 //        to the mid floor.
-//   C  SWITCH C (Earthgirl held) → grows EARTH BRIDGE EB1 over the lava →
-//        AIRBOY crosses to the right floor.
-//   D  BUTTON D (Airboy held) → raises stepping PILLAR P-mid in the lava →
-//        EARTHGIRL hops across to the right floor.
+//   C  AIRBOY hops across the floating CLOUD over the lava — but only he can use
+//        it and it vanishes the instant he steps on it, so it can't help the girl.
+//   D  AIRBOY pushes the stone BOX (in front of the earth door) left into the
+//        lava, where it slides to the middle → EARTHGIRL hops across.
 //   E  SWITCH E (Earthgirl held) → raises PILLAR P2 → AIRBOY climbs to his air
 //        door. Earthgirl then walks to her earth door on the floor.
 //   Win: every crystal collected and each hero standing in their own door.
 //
-// Reusable classes do the work (EarthSwitch / StonePillar / EarthBridge /
-// StoneWall); this file is layout + which control drives what.
+// Reusable classes do the work (EarthSwitch / StonePillar / Cloud / PushableBox
+// / StoneWall); this file is layout + which control drives what.
 
 import BaseLevelScene from './BaseLevelScene.js';
 import { TEX } from '../utils/textures.js';
 import EarthSwitch from '../entities/EarthSwitch.js';
 import StonePillar from '../entities/StonePillar.js';
-import EarthBridge from '../entities/EarthBridge.js';
 import StoneWall from '../entities/StoneWall.js';
+import PushableBox from '../entities/PushableBox.js';
+import Cloud from '../entities/Cloud.js';
 
 export default class Level3Scene extends BaseLevelScene {
   constructor() {
@@ -51,54 +52,63 @@ export default class Level3Scene extends BaseLevelScene {
     this.hazards = [];
 
     // --- Spawns (bottom-left, clear of Switch A) --------------------------
-    this.earthSpawn = { x: 40, y: 460 };
-    this.airSpawn = { x: 80, y: 460 };
+    this.earthSpawn = { x: 55, y: 460 };
+    this.airSpawn = { x: 135, y: 460 };
 
     // --- Floor: left floor, central lava, right floor ---------------------
-    this.addPlatform(210, 520, 420, 40, TEX.GROUND); // F_left   x   0 … 420
-    this.addPlatform(770, 520, 380, 40, TEX.GROUND); // F_right  x 580 … 960
-    this.addLava(500, 160); //                          LAVA pit  x 420 … 580
+    this.addPlatform(190, 520, 380, 40, TEX.GROUND); // F_left   x   0 … 380
+    this.addPlatform(790, 520, 340, 40, TEX.GROUND); // F_right  x 620 … 960
+    this.addLava(500, 240); //                          LAVA pit  x 380 … 620
 
     // Airboy's upper ledge (over Wall W1) and his exit platform (over the floor).
     this.addPlatform(330, 332, 150, 24); // UP1  x 255 … 405, top 320 (above W1)
     this.addPlatform(700, 332, 140, 24); // AP   x 630 … 770, top 320 (air door)
 
     // --- Temple structures (each driven by a HELD control) ----------------
-    const pillar1 = this.addStonePillar({ x: 210, height: 90 }); //         P1  → top 410
-    const wall1 = this.addStoneWall({ x: 290, topY: 355 }); //              W1  (blocks floor)
-    const bridge1 = this.addEarthBridge({ x: 420, y: 509, width: 160 }); // EB1 across the lava
-    // Stepping stone in the lava — parks BELOW the surface so it can't be used
-    // until Airboy raises it with Button D.
-    const pMid = this.addStonePillar({ x: 500, height: 60, width: 60, parkedTop: 545 });
-    const pillar2 = this.addStonePillar({ x: 820, height: 90 }); //         P2  → top 410 (clear of Switch E)
+    // Pillars are wider than the original (120); Switch A / Wall / Switch E are
+    // spaced out to stay clear of the pillar bodies.
+    const pillar1 = this.addStonePillar({ x: 210, height: 112, width: 120 }); // P1  → top ~398
+    const wall1 = this.addStoneWall({ x: 335, topY: 355 }); //              W1  (blocks floor)
+    // Cloud platform, sat midway between the upper ledge (top 320) and the lava
+    // (500). Only Airboy can use it and it vanishes for good once he steps on it,
+    // so he must push the box across for Earthgirl.
+    this.cloud = new Cloud(this, 490, 410, { width: 80, height: 30 });
+    // Pushable stone box: sits on the right floor next to Earthgirl's door (to
+    // its right, fully visible). Airboy shoves it left into the lava pit, where
+    // it slides to the middle as a stepping stone so Earthgirl can cross.
+    this.box = new PushableBox(this, 805, 0, {
+      width: 72,
+      height: 54,
+      floorY: 502.5,
+      settleX: 500, //          slides to the pit centre
+      settleTop: 488, //        top pokes out above the lava surface
+      settleTriggerX: 615 //    pushed this far left → slide into place
+    });
+    const pillar2 = this.addStonePillar({ x: 820, height: 112, width: 120 }); // P2  → top ~398
 
     // --- Earth Switches (EARTHGIRL ONLY, all HELD → snap back on release) --
     // A: raises P1 so Airboy can climb up and over Wall W1.
-    this.addEarthSwitch(130, 500, { onChange: (on) => pillar1.setRaised(on) });
-    // C: grows the earth bridge so Airboy can cross the lava.
-    this.addEarthSwitch(360, 500, { onChange: (on) => bridge1.setFormed(on) });
+    this.addEarthSwitch(95, 500, { onChange: (on) => pillar1.setRaised(on) });
     // E: raises the final pillar so Airboy can climb to his air door.
-    this.addEarthSwitch(900, 500, { onChange: (on) => pillar2.setRaised(on) });
+    this.addEarthSwitch(905, 500, { onChange: (on) => pillar2.setRaised(on) });
 
     // --- Shared buttons (AIRBOY's role, all HELD → snap back on release) ---
     // B: lives UP on the ledge — Airboy climbs the pillar, then holds it here to
     //    open Wall W1 so Earthgirl can walk through below.
     this.addButton(350, 320, (pressed) => wall1.setOpen(pressed), TEX.BUTTON_AIR);
-    // D: raises the stepping pillar so Earthgirl can hop across the lava.
-    // (kept clear to the right of the earth-exit door)
-    this.addButton(740, 500, (pressed) => pMid.setRaised(pressed), TEX.BUTTON_AIR);
+    // (Earthgirl crosses the lava on the box Airboy pushes in — no button needed.)
 
     // --- Crystals: GREEN on Earthgirl's route, BLUE on Airboy's -----------
     this.addCrystal(110, 466, 'earth'); // g1  start floor
-    this.addCrystal(340, 466, 'earth'); // g2  mid floor (past Wall 1)
-    this.addCrystal(860, 466, 'earth'); // g3  right floor (by Switch E)
+    this.addCrystal(360, 466, 'earth'); // g2  mid floor (past Wall 1)
+    this.addCrystal(665, 466, 'earth'); // g3  right floor (where Earthgirl lands)
 
     this.addCrystal(290, 297, 'air'); //   b1  on the upper ledge UP1
-    this.addCrystal(620, 466, 'air'); //   b2  right floor (after the bridge)
+    this.addCrystal(625, 466, 'air'); //   b2  right floor (clear of the box & P2)
     this.addCrystal(680, 297, 'air'); //   b3  on the air-door platform AP
 
     // --- Exit doors: earth on the floor, air up on platform AP ------------
-    this.addDoor(640, 468, 'earth'); // floor, right side
+    this.addDoor(705, 468, 'earth'); // floor, right side
     this.addDoor(700, 288, 'air'); //   on AP (only reachable after Switch E)
 
   }
@@ -120,12 +130,6 @@ export default class Level3Scene extends BaseLevelScene {
     return p;
   }
 
-  addEarthBridge(opts) {
-    const b = new EarthBridge(this, opts);
-    this.solids.push(b);
-    return b;
-  }
-
   addStoneWall(opts) {
     const w = new StoneWall(this, opts);
     this.solids.push(w);
@@ -135,12 +139,11 @@ export default class Level3Scene extends BaseLevelScene {
   /** Lava pit: visual fills from the ground line down; sensor sits a little
    *  lower so a formed bridge (surface at the ground line) is safe to walk on. */
   addLava(x, width) {
-    // Surface sits a little below the ground line so a formed bridge (top at
-    // the ground line, y 500) clearly reads as being ABOVE the lava.
-    const top = 500;
-    const bottom = 546;
-    const lava = this.add.tileSprite(x, (top + bottom) / 2, width, bottom - top, TEX.LAVA).setDepth(0);
-    const surface = this.add.rectangle(x, top + 4, width, 7, 0xffc400, 0.35).setDepth(0);
+    // Lava fills the pit up to the ground line (same height as the floor) with a
+    // pulsing surface glow and a few rising embers. The bridge/box sit on top.
+    const floorY = 500;
+    const lava = this.add.tileSprite(x, floorY + 20, width, 40, TEX.LAVA).setDepth(0); // 500 … 540
+    const surface = this.add.rectangle(x, floorY + 5, width - 10, 6, 0xffc400, 0.18).setDepth(0);
     this.tweens.add({
       targets: lava,
       tilePositionX: 96,
@@ -150,13 +153,24 @@ export default class Level3Scene extends BaseLevelScene {
     });
     this.tweens.add({
       targets: surface,
-      alpha: 0.5,
-      y: top + 2,
-      duration: 700,
+      alpha: 0.32,
+      y: floorY + 3,
+      duration: 680,
       yoyo: true,
       repeat: -1,
       ease: 'Sine.easeInOut'
     });
+    this.add.particles(x, floorY + 6, TEX.PIXEL, {
+      x: { min: -width / 2 + 8, max: width / 2 - 8 },
+      lifespan: 520,
+      speedY: { min: -22, max: -8 },
+      speedX: { min: -5, max: 5 },
+      scale: { start: 2, end: 0 },
+      alpha: { start: 0.45, end: 0 },
+      tint: [0xffc400, 0xff6d00],
+      frequency: 300,
+      quantity: 1
+    }).setDepth(1);
 
     const sensorTop = 522;
     const sensorBottom = 562;
@@ -173,9 +187,16 @@ export default class Level3Scene extends BaseLevelScene {
   setupCollisions() {
     super.setupCollisions();
 
+    // The box rests on the floors and can be stood on / shoved by either hero.
+    this.physics.add.collider(this.box, this.platforms);
+
+    // The cloud is solid ONLY for Airboy, and collapses the instant he lands.
+    this.physics.add.collider(this.airboy, this.cloud, () => this.cloud.collapse());
+
     this.players.forEach((player) => {
       // Pillars/bridges/walls are solid only while their body is enabled.
       this.solids.forEach((solid) => this.physics.add.collider(player, solid));
+      this.physics.add.collider(player, this.box);
       // Lava resets only the character who falls in.
       this.hazards.forEach((zone) =>
         this.physics.add.overlap(player, zone, () => this.respawnPlayer(player))
@@ -193,6 +214,7 @@ export default class Level3Scene extends BaseLevelScene {
     if (this.completed) return;
     this.earthSwitches.forEach((sw) => sw.refresh());
     this.pillars.forEach((p) => p.tick(delta));
+    this.box.trySettle();
   }
 
   /** Send a single character back to its spawn (keeps its collected crystals). */
@@ -226,15 +248,14 @@ export default class Level3Scene extends BaseLevelScene {
         .setOrigin(0.5)
         .setDepth(6);
 
-    caption(130, 478, 'A · hold (EG)', '#a5d6a7');
+    caption(95, 478, 'A · hold (EG)', '#a5d6a7');
     caption(210, 470, 'pillar', '#bcaaa4');
-    caption(290, 330, 'WALL', '#bcaaa4');
+    caption(335, 330, 'WALL', '#bcaaa4');
     caption(350, 300, 'B · hold (AB)', '#90caf9');
-    caption(360, 478, 'C (EG)', '#a5d6a7');
+    caption(500, 452, 'cloud (AB only)', '#cfe8ff');
     caption(500, 476, 'LAVA', '#ffab91');
-    caption(740, 478, 'D · hold (AB)', '#90caf9');
-    caption(900, 478, 'E (EG)', '#a5d6a7');
-    caption(640, 430, 'earth exit', '#a5d6a7');
+    caption(640, 430, 'push box (AB)', '#90caf9');
+    caption(935, 478, 'E (EG)', '#a5d6a7');
     caption(700, 300, 'air exit', '#90caf9');
   }
 

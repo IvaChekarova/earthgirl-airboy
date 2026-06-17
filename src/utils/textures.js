@@ -5,7 +5,9 @@
 import airboySpritesheetUrl from '../assets/references/airboy-spritesheet.png';
 import airBtnUrl from '../assets/references/airbtn.png';
 import airDoorUrl from '../assets/references/airdoor.png';
+import boxUrl from '../assets/references/box.png';
 import bridgeUrl from '../assets/references/bridge.png';
+import cloudUrl from '../assets/references/cloud.png';
 import earthBtnUrl from '../assets/references/earthbtn.png';
 import earthDoorUrl from '../assets/references/earthdoor.png';
 import earthgirlSpritesheetUrl from '../assets/references/earthgirl-spritesheet.png';
@@ -13,6 +15,8 @@ import gateUrl from '../assets/references/gate.png';
 import gemsUrl from '../assets/references/gems.png';
 import lavaUrl from '../assets/references/lava.png';
 import liftUrl from '../assets/references/lift.png';
+import pillarUrl from '../assets/references/pillar.png';
+import specialEarthBtnUrl from '../assets/references/specialearthbtn.png';
 import platformUrl from '../assets/references/platform.png';
 import wallUrl from '../assets/references/wall.png';
 import windGeneratorUrl from '../assets/references/windgenerator.png';
@@ -22,8 +26,11 @@ export const REF = {
   AIRBOY_SPRITESHEET: 'ref-airboy-spritesheet',
   AIR_BUTTON: 'ref-airbtn',
   AIR_DOOR: 'ref-airdoor',
+  BOX: 'ref-box',
   BRIDGE: 'ref-bridge',
+  CLOUD: 'ref-cloud',
   EARTH_BUTTON: 'ref-earthbtn',
+  EARTH_SWITCH: 'ref-specialearthbtn',
   EARTH_DOOR: 'ref-earthdoor',
   EARTHGIRL: 'ref-earthgirl',
   EARTHGIRL_SPRITESHEET: 'ref-earthgirl-spritesheet',
@@ -42,8 +49,11 @@ const REF_URLS = {
   [REF.AIRBOY_SPRITESHEET]: airboySpritesheetUrl,
   [REF.AIR_BUTTON]: airBtnUrl,
   [REF.AIR_DOOR]: airDoorUrl,
+  [REF.BOX]: boxUrl,
   [REF.BRIDGE]: bridgeUrl,
+  [REF.CLOUD]: cloudUrl,
   [REF.EARTH_BUTTON]: earthBtnUrl,
+  [REF.EARTH_SWITCH]: specialEarthBtnUrl,
   [REF.EARTH_DOOR]: earthDoorUrl,
   [REF.EARTHGIRL]: earthgirlSpritesheetUrl,
   [REF.EARTHGIRL_SPRITESHEET]: earthgirlSpritesheetUrl,
@@ -51,7 +61,7 @@ const REF_URLS = {
   [REF.GEMS]: gemsUrl,
   [REF.LAVA]: lavaUrl,
   [REF.LIFT]: liftUrl,
-  [REF.PILLAR]: gateUrl,
+  [REF.PILLAR]: pillarUrl,
   [REF.PLATFORM]: platformUrl,
   [REF.WALL]: wallUrl,
   [REF.WIND_GENERATOR]: windGeneratorUrl
@@ -228,6 +238,9 @@ export const TEX = {
   WALL_MOSS: 'tex-wall-moss',
   WALL_WIND: 'tex-wall-wind',
   PILLAR: 'tex-stone-pillar',
+  BOX: 'tex-stone-box',
+  CLOUD: 'tex-cloud',
+  EARTH_SWITCH: 'tex-earth-switch',
   LAVA: 'tex-lava',
   WIND_GENERATOR: 'tex-windgenerator',
   WIND_STREAM: 'tex-wind-stream',
@@ -292,7 +305,37 @@ export function generatePlaceholderTextures(scene) {
   makeAssetTexture(scene, TEX.WALL_BROKEN, REF.WALL, 128, 85, { removeBg: false, trim: false, cover: true });
   makeAssetTexture(scene, TEX.WALL_MOSS, REF.WALL, 128, 85, { removeBg: false, trim: false, cover: true });
   makeAssetTexture(scene, TEX.WALL_WIND, REF.WALL, 128, 85, { removeBg: false, trim: false, cover: true });
-  makeAssetTexture(scene, TEX.PILLAR, REF.PILLAR, 72, 96);
+  // Pillar art is a tall stone column; box art is a square stone block. Both are
+  // drawn as scaled images (not tiled), so the frame just needs to match the
+  // art's aspect to avoid transparent padding.
+  // bgMode 'darkOnly' so only the black backdrop is removed — the default mode
+  // would strip the low-saturation grey stone too, leaving just the ivy. Frame
+  // ratios match each art's real content (pillar 0.75:1, box 1.33:1) so there is
+  // no transparent padding that would make them float above the ground.
+  makeAssetTexture(scene, TEX.PILLAR, REF.PILLAR, 72, 96, {
+    crop: { x: 258, y: 79, w: 428, h: 1534 },
+    bgMode: 'darkOnly',
+    padding: 0,
+    fillY: 1.02
+  });
+  makeAssetTexture(scene, TEX.BOX, REF.BOX, 80, 60, {
+    crop: { x: 123, y: 143, w: 1003, h: 961 },
+    bgMode: 'darkOnly',
+    padding: 0,
+    fillY: 1.02
+  });
+  makeAssetTexture(scene, TEX.EARTH_SWITCH, REF.EARTH_SWITCH, 96, 36, {
+    crop: { x: 316, y: 183, w: 1192, h: 525 },
+    bgMode: 'darkOnly',
+    padding: 0,
+    fillY: 1.08
+  });
+  makeAssetTexture(scene, TEX.CLOUD, REF.CLOUD, 120, 60, {
+    crop: { x: 345, y: 253, w: 846, h: 451 },
+    bgMode: 'darkOnly',
+    padding: 0,
+    fillY: 1.05
+  });
   makeAssetTexture(scene, TEX.DOOR_EARTH, REF.EARTH_DOOR, 58, 76, {
     crop: { x: 388, y: 160, w: 760, h: 760 },
     bgMode: 'darkOnly',
