@@ -230,6 +230,7 @@ export const TEX = {
   PILLAR: 'tex-stone-pillar',
   LAVA: 'tex-lava',
   WIND_GENERATOR: 'tex-windgenerator',
+  WIND_STREAM: 'tex-wind-stream',
   SHADOW: 'tex-soft-shadow',
   PIXEL: 'tex-pixel'
 };
@@ -311,11 +312,41 @@ export function generatePlaceholderTextures(scene) {
   makeAssetTexture(scene, TEX.CRYSTAL_EARTH, REF.GEMS, 36, 42, { crop: { x: 45, y: 175, w: 720, h: 625 } });
   makeAssetTexture(scene, TEX.CRYSTAL_AIR, REF.GEMS, 36, 42, { crop: { x: 775, y: 175, w: 720, h: 625 } });
   makeAssetTexture(scene, TEX.LAVA, REF.LAVA, 192, 38, { crop: { x: 240, y: 350, w: 1050, h: 310 }, fillY: 1.2 });
-  makeAssetTexture(scene, TEX.WIND_GENERATOR, REF.WIND_GENERATOR, 96, 140);
+  // The generator art is a wide ~2:1 vent; keep the frame that ratio so there is
+  // no transparent padding (which would otherwise leave a gap under it).
+  makeAssetTexture(scene, TEX.WIND_GENERATOR, REF.WIND_GENERATOR, 96, 50);
 
   makeCanvasTexture(scene, TEX.PIXEL, 1, 1, (ctx) => {
     ctx.fillStyle = '#ffffff';
     ctx.fillRect(0, 0, 1, 1);
+  });
+  // A soft, edge-faded column of vertical streaks. Used as a vertically
+  // scrolling tileSprite so the wind reads as flowing air, not a solid box.
+  makeCanvasTexture(scene, TEX.WIND_STREAM, 64, 128, (ctx, w, h) => {
+    // Horizontal falloff: transparent at the sides, soft in the middle.
+    const grad = ctx.createLinearGradient(0, 0, w, 0);
+    grad.addColorStop(0, 'rgba(179,229,252,0)');
+    grad.addColorStop(0.5, 'rgba(179,229,252,0.20)');
+    grad.addColorStop(1, 'rgba(179,229,252,0)');
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, w, h);
+
+    // A few brighter streaks with gaps, so scrolling them looks like gusts.
+    ctx.lineCap = 'round';
+    ctx.lineWidth = 2;
+    const streaks = [
+      [16, 0.16, 8, 70],
+      [30, 0.3, 40, 122],
+      [40, 0.14, 0, 54],
+      [50, 0.22, 60, 118]
+    ];
+    streaks.forEach(([sx, a, y0, y1]) => {
+      ctx.strokeStyle = `rgba(225,245,254,${a})`;
+      ctx.beginPath();
+      ctx.moveTo(sx, y0);
+      ctx.lineTo(sx, y1);
+      ctx.stroke();
+    });
   });
   makeCanvasTexture(scene, TEX.SHADOW, 96, 18, (ctx, w, h) => {
     const gradient = ctx.createRadialGradient(w / 2, h / 2, 4, w / 2, h / 2, w / 2);

@@ -59,6 +59,9 @@ export default class MenuScene extends Phaser.Scene {
       this.toggleInstructions();
     });
 
+    // --- TEMPORARY: quick level jump for testing (remove before release) ----
+    this.buildLevelSelect(width, height / 2 + 128);
+
     this.add
       .text(width / 2, height - 35, 'In-game:  R = restart level    ESC = menu', {
         fontFamily: 'monospace',
@@ -112,6 +115,58 @@ export default class MenuScene extends Phaser.Scene {
     });
 
     return container;
+  }
+
+  /**
+   * TEMPORARY testing aid — a row of small "Level N" buttons that jump straight
+   * into a level. Remove this method and its call before release.
+   */
+  buildLevelSelect(width, y) {
+    const levels = ['Level1Scene', 'Level2Scene', 'Level3Scene'];
+
+    this.add
+      .text(width / 2, y - 22, 'TEST — jump to level:', {
+        fontFamily: 'monospace',
+        fontSize: '12px',
+        color: '#ffb74d'
+      })
+      .setOrigin(0.5);
+
+    const size = 38;
+    const gap = 14;
+    const totalWidth = levels.length * size + (levels.length - 1) * gap;
+    let cx = width / 2 - totalWidth / 2 + size / 2;
+
+    levels.forEach((key, i) => {
+      const container = this.add.container(cx, y + 6);
+      const bg = this.add.rectangle(0, 0, size, size, 0x1d2233).setStrokeStyle(2, 0xffb74d, 0.85);
+      const label = this.add
+        .text(0, 0, String(i + 1), {
+          fontFamily: 'monospace',
+          fontSize: '20px',
+          fontStyle: 'bold',
+          color: '#ffe0b2'
+        })
+        .setOrigin(0.5);
+
+      container.add([bg, label]);
+      container.setSize(size, size);
+      container.setInteractive(
+        new Phaser.Geom.Rectangle(-size / 2, -size / 2, size, size),
+        Phaser.Geom.Rectangle.Contains
+      );
+      container.on('pointerover', () => {
+        bg.setFillStyle(0x2a3350);
+        this.input.setDefaultCursor('pointer');
+      });
+      container.on('pointerout', () => {
+        bg.setFillStyle(0x1d2233);
+        this.input.setDefaultCursor('default');
+      });
+      container.on('pointerup', () => this.scene.start(key));
+
+      cx += size + gap;
+    });
   }
 
   buildInstructionsPanel(width, height) {

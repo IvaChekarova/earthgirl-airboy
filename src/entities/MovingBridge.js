@@ -40,13 +40,22 @@ export default class MovingBridge extends Phaser.Physics.Arcade.Image {
     this.setVisible(false);
 
     const art = scene.getTempleArt ? scene.getTempleArt() : { moving: TEX.MOVING_PLATFORM };
+    // How far below the (static) collision position the visual sits. Bridges
+    // pass a small value so the plank's top lines up with the walk surface and
+    // covers the lava; the gate keeps the default.
+    this._visualOffsetY = opts.visualOffsetY ?? 10;
     this.shadow = scene.add
       .tileSprite(opts.x, opts.activeY + 18, width + 18, 18, TEX.SHADOW)
       .setDepth(1)
       .setAlpha(0.5);
+    // Bridges use the dedicated bridge artwork; other solids (e.g. the gate)
+    // fall back to the moving-platform texture. The visual width/height are
+    // tunable so a bridge can span its whole lava pool and be made thicker.
+    const visualWidth = opts.visualWidth ?? Math.round(width * (opts.visualWidthFactor ?? 0.9));
+    const visualHeight = opts.visualHeight ?? 24;
     this.visual = scene.add
-      .image(opts.x, (startActive ? opts.activeY : opts.parkedY) + 10, art.moving)
-      .setDisplaySize(Math.round(width * 0.9), 24)
+      .image(opts.x, (startActive ? opts.activeY : opts.parkedY) + this._visualOffsetY, opts.texture ?? art.moving)
+      .setDisplaySize(visualWidth, visualHeight)
       .setDepth(3);
 
     // Static body, sized + fixed at the ACTIVE position. It never moves.
@@ -84,7 +93,7 @@ export default class MovingBridge extends Phaser.Physics.Arcade.Image {
     this.body.enable = value;
     this._tween = this.scene.tweens.add({
       targets: this.visual,
-      y: (value ? this.activeY : this.parkedY) + 10,
+      y: (value ? this.activeY : this.parkedY) + this._visualOffsetY,
       duration: this.duration,
       ease: 'Sine.easeInOut'
     });

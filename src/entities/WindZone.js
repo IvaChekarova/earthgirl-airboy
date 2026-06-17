@@ -3,8 +3,10 @@
 // scene simply doesn't register an overlap for Earthgirl, so she is never
 // lifted.
 //
-// Visually it is a translucent light-blue column with a few brighter "stream"
-// lines and small particles drifting upward.
+// Visually it is a soft, edge-faded column of airflow that scrolls upward (so
+// it reads as moving air, not a solid box) with a wind generator at its base
+// and a few drifting particles. The visual reach can be extended upward once a
+// blocker in the shaft (e.g. the gate) is lifted — see setVisualTop.
 
 import Phaser from 'phaser';
 import { TEX } from '../utils/textures.js';
@@ -27,47 +29,49 @@ export default class WindZone extends Phaser.GameObjects.Zone {
 
     this.strength = opts.strength ?? 320;
 
+    // Shaft geometry. The airflow VISUAL lives between `bottom` and `currentTop`
+    // and can grow upward; the physics body (this Zone) never changes.
+    this.zoneX = x;
+    this.zoneWidth = width;
+    this.bottom = y + height / 2;
+    this.baseTop = y - height / 2;
+    this.currentTop = this.baseTop;
+
     // --- Visuals ---------------------------------------------------------
+    // Wind generator standing on the ground at the base of the shaft. Its base
+    // is anchored a little below the floor surface so it reads as planted on the
+    // ground, and it keeps the art's wide ~2:1 ratio (a vent, not a tower).
+    const genWidth = Math.max(width + 6, 76);
     this.generator = scene.add
-      .image(x, y + height / 2 - 12, TEX.WIND_GENERATOR)
-      .setDisplaySize(Math.max(width + 30, 76), 86)
+      .image(x, this.bottom + 28, TEX.WIND_GENERATOR)
+      .setOrigin(0.5, 1)
+      .setDisplaySize(genWidth, Math.round(genWidth * 0.5))
       .setDepth(2);
 
+    // Flowing airflow column: a soft, edge-faded stream scrolled upward so it
+    // looks like moving air rather than a bordered rectangle.
     this.column = scene.add
-      .rectangle(x, y, width, height, 0x64b5f6, 0.16)
-      .setStrokeStyle(2, 0x90caf9, 0.45)
+      .tileSprite(x, (this.bottom + this.currentTop) / 2, width + 8, this.bottom - this.currentTop, TEX.WIND_STREAM)
       .setDepth(1);
+    scene.tweens.add({
+      targets: this.column,
+      tilePositionY: 256, // scroll the streaks upward forever
+      duration: 1400,
+      repeat: -1,
+      ease: 'Linear'
+    });
 
-    // A few vertical stream lines that gently pulse.
-    this.streams = [];
-    const lines = Math.max(2, Math.floor(width / 24));
-    for (let i = 0; i < lines; i += 1) {
-      const sx = x - width / 2 + (i + 0.5) * (width / lines);
-      const line = scene.add
-        .rectangle(sx, y, 3, height * 0.92, 0xb3e5fc, 0.3)
-        .setDepth(1);
-      scene.tweens.add({
-        targets: line,
-        alpha: 0.08,
-        duration: 600 + i * 120,
-        yoyo: true,
-        repeat: -1,
-        ease: 'Sine.easeInOut'
-      });
-      this.streams.push(line);
-    }
-
-    // Upward-drifting particles for a sense of movement.
+    // Upward-drifting particles for extra life near the base.
     this.emitter = scene.add
-      .particles(x, y + height / 2 - 4, TEX.PIXEL, {
+      .particles(x, this.bottom - 6, TEX.PIXEL, {
         x: { min: -width / 2 + 4, max: width / 2 - 4 },
-        lifespan: 1300,
-        speedY: { min: -170, max: -90 },
-        speedX: { min: -12, max: 12 },
+        lifespan: 1500,
+        speedY: { min: -150, max: -80 },
+        speedX: { min: -10, max: 10 },
         scale: { start: 3, end: 0 },
-        alpha: { start: 0.5, end: 0 },
-        tint: 0xb3e5fc,
-        frequency: 80,
+        alpha: { start: 0.45, end: 0 },
+        tint: [0xb3e5fc, 0xe1f5fe],
+        frequency: 60,
         quantity: 1
       })
       .setDepth(1);
@@ -78,10 +82,27 @@ export default class WindZone extends Phaser.GameObjects.Zone {
     player.setVelocityY(-this.strength);
   }
 
+  /**
+   * Extend (or restore) how far up the airflow VISUAL reaches. Physics is
+   * unchanged — this only makes the wind look like it keeps flowing upward once
+   * a blocker (e.g. the gate) is lifted out of the shaft. Pass `baseTop` to
+   * restore the original (blocked) reach.
+   */
+  setVisualTop(topY) {
+    this.currentTop = topY;
+    this.scene.tweens.add({
+      targets: this.column,
+      height: this.bottom - topY,
+      y: (this.bottom + topY) / 2,
+      duration: 320,
+      ease: 'Sine.easeInOut'
+    });
+    return this;
+  }
+
   destroy(fromScene) {
     this.generator?.destroy();
     this.column?.destroy();
-    this.streams?.forEach((s) => s.destroy());
     this.emitter?.destroy();
     super.destroy(fromScene);
   }

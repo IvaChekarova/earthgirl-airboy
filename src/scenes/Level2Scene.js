@@ -45,9 +45,9 @@ export default class Level2Scene extends BaseLevelScene {
     this.solids = []; // bridges + gate (all moving solid platforms)
     this.hazards = [];
 
-    // --- Spawns (bottom-left) ---------------------------------------------
-    this.earthSpawn = { x: 55, y: 460 };
-    this.airSpawn = { x: 110, y: 460 };
+    // --- Spawns (bottom-left, clear of Wind 1's generator) ----------------
+    this.earthSpawn = { x: 150, y: 460 };
+    this.airSpawn = { x: 205, y: 460 };
 
     // --- Floors (top surface y = 500). Two unjumpable lava pits split them --
     this.addPlatform(165, 520, 330, 40, TEX.GROUND); // F_start  x   0 … 330
@@ -69,12 +69,25 @@ export default class Level2Scene extends BaseLevelScene {
     // Wind 2 stops BELOW the gate (top 230) so its airflow never reaches the
     // platform — Airboy is never grabbed by the wind once he is standing on PC.
     this.addWind(55, 415, 60, 170, 300); //  WIND 1  x 25 … 85  → up to PA
-    this.addWind(290, 365, 70, 270, 380); // WIND 2  x 255 … 325, y 230 … 500 → PC
+    const wind2 = this.addWind(290, 365, 70, 270, 380); // WIND 2  x 255 … 325, y 230 … 500 → PC
 
     // --- Moving solids: 2 bridges (park UP, press = DOWN) + 1 gate ---------
     // Bridge: solid DOWN over the lava (activeY 510), parked UP (parkedY 360).
-    const bridge1 = this.addSolid({ x: 442, activeY: 510, parkedY: 360, width: 235 });
-    const bridge2 = this.addSolid({ x: 767, activeY: 510, parkedY: 360, width: 235 });
+    // Bridges use the bridge artwork and slide noticeably slower when toggled.
+    // The plank's VISUAL matches the lava bed (no side overhang), while its
+    // collision body is a touch wider so it still spans the floor gap. It is a
+    // bit thicker; visualOffsetY = visualHeight/2 - 10 keeps the plank's top
+    // level with the walk surface so it rests on top of the lava.
+    const LAVA_W = 225; // fills the floor gap exactly
+    const bridgeStyle = {
+      texture: TEX.EARTH_BRIDGE,
+      duration: 600,
+      visualWidth: LAVA_W,
+      visualHeight: 34,
+      visualOffsetY: 7
+    };
+    const bridge1 = this.addSolid({ x: 442, activeY: 510, parkedY: 360, width: LAVA_W + 10, ...bridgeStyle });
+    const bridge2 = this.addSolid({ x: 767, activeY: 510, parkedY: 360, width: LAVA_W + 10, ...bridgeStyle });
     // Gate: sits at PLATFORM level (activeY 215) as the lid of Wind 2's shaft —
     // floating, touching nothing, and capping the airflow. Button B slides it UP
     // and OUT of the way (parkedY 60). It is HELD: released → it drops back.
@@ -85,8 +98,12 @@ export default class Level2Scene extends BaseLevelScene {
     // BUTTON A (Airboy, on PA): hold to lower Bridge 1 over Lava 1.
     this.addButton(180, 350, (pressed) => bridge1.setActive(pressed), TEX.BUTTON_AIR);
     // BUTTON B (Earthgirl, middle floor): HOLD to lift the gate clearing Wind 2.
-    // Releasing it drops the gate back down.
-    this.addButton(605, 500, (pressed) => gate.setActive(!pressed), TEX.BUTTON_EARTH);
+    // Releasing it drops the gate back down. While the gate is up the airflow
+    // visually keeps flowing further up the cleared shaft.
+    this.addButton(605, 500, (pressed) => {
+      gate.setActive(!pressed);
+      wind2.setVisualTop(pressed ? 130 : wind2.baseTop);
+    }, TEX.BUTTON_EARTH);
     // BUTTON C (Airboy, on PC): hold to lower Bridge 2 over Lava 2.
     this.addButton(400, 200, (pressed) => bridge2.setActive(pressed), TEX.BUTTON_AIR);
 
@@ -124,16 +141,18 @@ export default class Level2Scene extends BaseLevelScene {
 
   /**
    * Animated lava pool + an overlap sensor for the per-character reset. The
-   * visual fills the gap from the ground line down; the SENSOR starts a little
-   * lower (y 522) so a deployed bridge — whose walk surface is at the ground
+   * visual is a thin strip at the ground line (matching Level 1); the SENSOR
+   * starts a little lower (y 522) so a deployed bridge — whose walk surface is at the ground
    * line (y 500) — can be stood on safely. You only die by actually falling in.
    */
   addLava(x, width) {
-    const top = 500; // touches the ground/platform edge
-    const bottom = 546;
-
-    const lava = this.add.tileSprite(x, (top + bottom) / 2, width, bottom - top, TEX.LAVA).setDepth(1);
-    const surface = this.add.rectangle(x, top + 4, width, 7, 0xffc400, 0.35).setDepth(1);
+    // A lava bed sitting in the pit: no side overhang (so it doesn't reach the
+    // wind generators) and dropped a little below the floor line so a lowered
+    // bridge rests on top of it rather than sinking inside it.
+    const floorY = 500;
+    const visualWidth = width;
+    const lava = this.add.tileSprite(x, floorY + 30, visualWidth, 30, TEX.LAVA).setDepth(1);
+    const surface = this.add.rectangle(x, floorY + 18, visualWidth - 10, 4, 0xffc400, 0.14).setDepth(1);
     this.tweens.add({
       targets: lava,
       tilePositionX: 96,
@@ -143,13 +162,24 @@ export default class Level2Scene extends BaseLevelScene {
     });
     this.tweens.add({
       targets: surface,
-      alpha: 0.5,
-      y: top + 2,
-      duration: 700,
+      alpha: 0.24,
+      y: floorY + 16,
+      duration: 680,
       yoyo: true,
       repeat: -1,
       ease: 'Sine.easeInOut'
     });
+    this.add.particles(x, floorY + 19, TEX.PIXEL, {
+      x: { min: -visualWidth / 2 + 8, max: visualWidth / 2 - 8 },
+      lifespan: 520,
+      speedY: { min: -22, max: -8 },
+      speedX: { min: -5, max: 5 },
+      scale: { start: 2, end: 0 },
+      alpha: { start: 0.45, end: 0 },
+      tint: [0xffc400, 0xff6d00],
+      frequency: 300,
+      quantity: 1
+    }).setDepth(2);
 
     const sensorTop = 522; // below the bridge/ground walk surface
     const sensorBottom = 562;
