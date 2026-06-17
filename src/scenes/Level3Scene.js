@@ -77,9 +77,9 @@ export default class Level3Scene extends BaseLevelScene {
     // its right, fully visible). Airboy shoves it left into the lava pit, where
     // it slides to the middle as a stepping stone so Earthgirl can cross.
     this.box = new PushableBox(this, 805, 0, {
-      width: 72,
-      height: 54,
-      floorY: 502.5,
+      width: 50,
+      height: 45,
+      floorY: 500.5,
       settleX: 500, //          slides to the pit centre
       settleTop: 488, //        top pokes out above the lava surface
       settleTriggerX: 615 //    pushed this far left → slide into place
