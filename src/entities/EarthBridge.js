@@ -1,0 +1,60 @@
+// EarthBridge — a root-and-stone pathway that grows across a hazard when an
+// EarthSwitch forms it. Per the brief: it grows smoothly and becomes solid only
+// once FULLY formed.
+//
+// Implementation: the static body is fixed at the full span; the sprite grows
+// from its left edge (scaleX 0 → 1). Collision is enabled on completion. Once
+// formed it stays (these are latched in the puzzle), so both heroes can cross.
+
+import Phaser from 'phaser';
+import { TEX } from '../utils/textures.js';
+
+export default class EarthBridge extends Phaser.Physics.Arcade.Image {
+  /**
+   * @param {Phaser.Scene} scene
+   * @param {object} opts
+   * @param {number} opts.x       LEFT edge of the bridge
+   * @param {number} opts.y       centre y (its top should match the floor line)
+   * @param {number} opts.width   full span
+   * @param {number} [opts.height]
+   */
+  constructor(scene, opts) {
+    super(scene, opts.x, opts.y, TEX.PLATFORM);
+
+    scene.add.existing(this);
+    this.setOrigin(0, 0.5); // grow rightward from the left edge
+    this.setDisplaySize(opts.width, opts.height ?? 18);
+    this.setTint(0x6d4c41); // root-brown
+    this.setDepth(3); // clearly above the lava
+
+    scene.physics.add.existing(this, true); // static body spanning the full bridge
+    this.body.updateFromGameObject();
+
+    this.fullScaleX = this.scaleX;
+    this.duration = opts.duration ?? 600;
+    this.isFormed = false;
+    this._tween = null;
+
+    // Start un-formed: no collision, zero width.
+    this.body.enable = false;
+    this.scaleX = 0;
+  }
+
+  /** true → grow into place (solid once full); false → retract (intangible). */
+  setFormed(value) {
+    value = !!value;
+    if (value === this.isFormed) return this;
+    this.isFormed = value;
+    if (this._tween) this._tween.stop();
+
+    // Toggle collision immediately (reliable); the grow/shrink is visual only.
+    this.body.enable = value;
+    this._tween = this.scene.tweens.add({
+      targets: this,
+      scaleX: value ? this.fullScaleX : 0,
+      duration: value ? this.duration : this.duration * 0.7,
+      ease: value ? 'Quad.easeOut' : 'Quad.easeIn'
+    });
+    return this;
+  }
+}

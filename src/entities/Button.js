@@ -27,8 +27,10 @@ export default class Button extends Phaser.Physics.Arcade.Sprite {
     this.body.setSize(this.width, this.height);
     this.setDepth(3);
 
-    // Tracks whether a player is touching the button this frame.
+    // Tracks whether a player is touching the button this frame, plus a short
+    // "grace" so a single-frame gap in the overlap doesn't make it flicker.
     this._touchedThisFrame = false;
+    this._grace = 0;
   }
 
   /** Called from the scene's overlap callback whenever a player is on it. */
@@ -38,9 +40,13 @@ export default class Button extends Phaser.Physics.Arcade.Sprite {
 
   /**
    * Resolve the pressed state once per frame (call at end of scene update).
+   * Stays pressed for a few frames after the last touch to avoid blinking.
    */
   refresh() {
-    const nowPressed = this._touchedThisFrame;
+    if (this._touchedThisFrame) this._grace = 5;
+    else if (this._grace > 0) this._grace -= 1;
+
+    const nowPressed = this._touchedThisFrame || this._grace > 0;
     if (nowPressed !== this.pressed) {
       this.pressed = nowPressed;
       this.setTexture(nowPressed ? TEX.BUTTON_PRESSED : TEX.BUTTON);
