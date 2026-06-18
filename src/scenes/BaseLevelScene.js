@@ -14,7 +14,7 @@ import {
   registerCharacterAnimations
 } from '../utils/characterTextures.js';
 import { gameEvents, EVENTS } from '../utils/events.js';
-import { MUSIC, SFX, preloadAudio, playMusic, playSfx, stopMusic } from '../utils/audio.js';
+import { MUSIC, SFX, preloadAudio, playMusic, playSfx, stopMusic, sfxDuration } from '../utils/audio.js';
 import Earthgirl from '../entities/Earthgirl.js';
 import Airboy from '../entities/Airboy.js';
 import Crystal from '../entities/Crystal.js';
@@ -376,9 +376,32 @@ export default class BaseLevelScene extends Phaser.Scene {
       if (!atDoor) bothSatisfied = false;
     });
 
-    if (bothSatisfied && !this.completed) {
-      this.completeLevel();
+    if (this.completed) return;
+
+    if (bothSatisfied) {
+      // Both are home: don't finish on contact. Wait for the door sound to play
+      // out, and only complete if they BOTH stay put until it finishes.
+      if (!this._sealTimer) {
+        this._sealTimer = this.time.delayedCall(sfxDuration(this, SFX.DOOR), () => {
+          this._sealTimer = null;
+          if (!this.completed && this.bothAtDoors()) this.completeLevel();
+        });
+      }
+    } else if (this._sealTimer) {
+      // Someone stepped out before the sound finished — abort the win.
+      this._sealTimer.remove();
+      this._sealTimer = null;
     }
+  }
+
+  /** True only while each hero is standing in its own (ready) door. */
+  bothAtDoors() {
+    return ['earth', 'air'].every((element) => {
+      const door = this.doors[element];
+      if (!door) return true;
+      const player = element === 'air' ? this.airboy : this.earthgirl;
+      return player.atDoor;
+    });
   }
 
   completeLevel() {

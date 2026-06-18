@@ -50,15 +50,55 @@ export function preloadAudio(scene) {
   });
 }
 
+// Some source clips run several seconds and drone on long after the action that
+// triggered them. Cap how long these one-shots play (ms). A call may override
+// with its own `duration`; anything not listed plays to its natural end.
+const SFX_MAX_MS = {
+  [SFX.DOOR]: 1200,
+  [SFX.GATE]: 900
+};
+
+// How long `playSfx` will actually let `key` sound for (ms): the cap if one is
+// set, otherwise the clip's natural length (with a sensible fallback).
+export function sfxDuration(scene, key) {
+  if (SFX_MAX_MS[key]) return SFX_MAX_MS[key];
+  const buffer = scene?.cache?.audio?.get?.(key);
+  const seconds = typeof buffer?.duration === 'number' ? buffer.duration : null;
+  return seconds ? Math.round(seconds * 1000) : 1000;
+}
+
 export function playSfx(scene, key, config = {}) {
   if (!scene || !scene.sound || !scene.cache) return;
+  if (!scene.cache.audio.exists(key)) return;
 
-  if (scene.cache.audio.exists(key)) {
-    scene.sound.play(key, {
-      volume: 0.6,
-      ...config
-    });
+  const { duration, ...soundConfig } = config;
+  const cap = duration ?? SFX_MAX_MS[key];
+  const opts = { volume: 0.6, ...soundConfig };
+
+  // No cap → fire-and-forget one-shot (auto-cleaned by Phaser).
+  if (!cap) {
+    scene.sound.play(key, opts);
+    return;
   }
+
+  // Capped → own the instance so we can stop it early, fading out over the last
+  // moments so the cut isn't an audible click.
+  const sound = scene.sound.add(key, opts);
+  sound.play();
+
+  const fade = 140;
+  scene.time.delayedCall(Math.max(0, cap - fade), () => {
+    if (!sound.isPlaying) return;
+    scene.tweens.add({
+      targets: sound,
+      volume: 0,
+      duration: fade,
+      onComplete: () => sound.stop()
+    });
+  });
+
+  sound.once('stop', () => sound.destroy());
+  sound.once('complete', () => sound.destroy());
 }
 
 export function playMusic(scene, key, config = {}) {

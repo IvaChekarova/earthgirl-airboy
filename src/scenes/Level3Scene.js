@@ -68,7 +68,7 @@ export default class Level3Scene extends BaseLevelScene {
     // Pillars are wider than the original (120); Switch A / Wall / Switch E are
     // spaced out to stay clear of the pillar bodies.
     const pillar1 = this.addStonePillar({ x: 210, height: 112, width: 120 }); // P1  → top ~398
-    const wall1 = this.addStoneWall({ x: 335, topY: 355 }); //              W1  (blocks floor)
+    const wall1 = this.addStoneWall({ x: 335, topY: 355, width: 20 }); //    W1  (blocks floor)
     // Cloud platform, sat midway between the upper ledge (top 320) and the lava
     // (500). Only Airboy can use it and it vanishes for good once he steps on it,
     // so he must push the box across for Earthgirl.
@@ -104,7 +104,7 @@ export default class Level3Scene extends BaseLevelScene {
     this.addCrystal(665, 466, 'earth'); // g3  right floor (where Earthgirl lands)
 
     this.addCrystal(290, 297, 'air'); //   b1  on the upper ledge UP1
-    this.addCrystal(625, 466, 'air'); //   b2  right floor (clear of the box & P2)
+    this.addCrystal(905, 468, 'air'); //   b2  above Switch E (second earth switch)
     this.addCrystal(680, 297, 'air'); //   b3  on the air-door platform AP
 
     // --- Exit doors: earth on the floor, air up on platform AP ------------
@@ -136,13 +136,14 @@ export default class Level3Scene extends BaseLevelScene {
     return w;
   }
 
-  /** Lava pit: visual fills from the ground line down; sensor sits a little
-   *  lower so a formed bridge (surface at the ground line) is safe to walk on. */
+  /** Lava pit: a shallow molten band at the ground line. The kill sensor sits
+   *  just below the surface so touching the lava is lethal, while the box
+   *  stepping stone (top well above the surface) stays safe to stand on. */
   addLava(x, width) {
-    // Lava fills the pit up to the ground line (same height as the floor) with a
-    // pulsing surface glow and a few rising embers. The bridge/box sit on top.
+    // Lava sits at the ground line (same height as the floor) as a shallow band
+    // with a pulsing surface glow and a few rising embers. The box sits on top.
     const floorY = 500;
-    const lava = this.add.tileSprite(x, floorY + 20, width, 40, TEX.LAVA).setDepth(0); // 500 … 540
+    const lava = this.add.tileSprite(x, floorY + 12, width, 24, TEX.LAVA).setDepth(0); // 500 … 524
     const surface = this.add.rectangle(x, floorY + 5, width - 10, 6, 0xffc400, 0.18).setDepth(0);
     this.tweens.add({
       targets: lava,
@@ -172,8 +173,8 @@ export default class Level3Scene extends BaseLevelScene {
       quantity: 1
     }).setDepth(1);
 
-    const sensorTop = 522;
-    const sensorBottom = 562;
+    const sensorTop = 505; //    just below the molten surface → contact is lethal
+    const sensorBottom = 540;
     const zone = this.add.zone(x, (sensorTop + sensorBottom) / 2, width, sensorBottom - sensorTop);
     this.physics.add.existing(zone, true);
     this.hazards.push(zone);

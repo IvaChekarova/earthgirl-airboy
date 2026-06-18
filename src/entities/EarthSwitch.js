@@ -51,12 +51,6 @@ export default class EarthSwitch extends Phaser.Physics.Arcade.Sprite {
     this.latched = false;
     this._touched = false;
     this._grace = 0; // short hold-over so the overlap can't flicker the switch
-
-    // Soft glow behind the plate, shown only while active.
-    this.glow = scene.add
-      .rectangle(x, y - 9, 56, 22, 0x66bb6a, 0)
-      .setStrokeStyle(2, 0x9cffb0, 0)
-      .setDepth(2);
   }
 
   /** Called by the scene's Earthgirl-only overlap each frame she stands on it. */
@@ -81,8 +75,6 @@ export default class EarthSwitch extends Phaser.Physics.Arcade.Sprite {
   }
 
   setVisualActive(on) {
-    this.glow.setStrokeStyle(2, 0x9cffb0, on ? 1 : 0);
-    this.glow.setFillStyle(0x66bb6a, on ? 0.3 : 0);
     // Brighten and press the plate down a touch when active.
     if (on) this.visual.clearTint();
     else this.visual.setTint(0x9fc4a3);
@@ -91,7 +83,6 @@ export default class EarthSwitch extends Phaser.Physics.Arcade.Sprite {
 
   destroy(fromScene) {
     if (this.visual) this.visual.destroy();
-    if (this.glow) this.glow.destroy();
     super.destroy(fromScene);
   }
 }

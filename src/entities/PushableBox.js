@@ -34,8 +34,19 @@ export default class PushableBox extends Phaser.Physics.Arcade.Image {
 
     this.setDisplaySize(width, height);
     this.setDepth(5);
-    this.body.setSize(Math.round(width * 0.88), Math.round(height * 0.9));
-    this.body.setOffset((this.width - this.body.width) / 2, this.height - this.body.height);
+
+    // Physics body. Arcade scales the body by the sprite's display scale, so we
+    // size it in *source* (frame) pixels — `this.width`/`this.height` — and let
+    // that scaling bring it to the intended world size. (Passing display pixels
+    // here would get scaled a second time, leaving a body ~half the sprite.)
+    // Offset it so the sprite overhangs the body by `footOverlap` world px at the
+    // bottom: the body rests on the floor while the sprite sinks into the ground,
+    // so the box reads as planted instead of perched — matching the heroes' feet.
+    const footOverlap = 6;
+    const bodyW = Math.round(this.width * 0.88);
+    const bodyH = Math.round(this.height - footOverlap / this.scaleY);
+    this.body.setSize(bodyW, bodyH, false);
+    this.body.setOffset((this.width - bodyW) / 2, 0);
 
     this.body.setCollideWorldBounds(true);
     this.body.pushable = true; // characters can shove it

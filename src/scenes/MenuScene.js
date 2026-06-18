@@ -54,31 +54,19 @@ export default class MenuScene extends Phaser.Scene {
       })
       .setOrigin(0.5);
 
-    // Characters placed beside the menu, not over the title.
-    this.add.image(width / 2 - 250, 225, 'eg-idle-0').setScale(1.32);
-    this.add.image(width / 2 + 250, 225, 'ab-idle-0').setScale(1.32);
+    // Heroes centred above the menu box, each right beside its matching door
+    // (door scaled to the same height as the character).
+    const rowY = 205;
+    const eg = this.add.image(width / 2 - 55, rowY, 'eg-idle-0').setScale(1.32);
+    const ab = this.add.image(width / 2 + 55, rowY, 'ab-idle-0').setScale(1.32);
 
-    this.add
-      .text(width / 2 - 250, 292, 'EARTHGIRL', {
-        fontFamily: 'monospace',
-        fontSize: '13px',
-        fontStyle: 'bold',
-        color: '#a5f07a',
-        stroke: '#000000',
-        strokeThickness: 3
-      })
-      .setOrigin(0.5);
+    const earthDoor = this.add.image(0, rowY, TEX.DOOR_EARTH);
+    earthDoor.setScale(eg.displayHeight / earthDoor.height);
+    earthDoor.x = eg.x - eg.displayWidth / 2 - earthDoor.displayWidth / 2 - 6;
 
-    this.add
-      .text(width / 2 + 250, 292, 'AIRBOY', {
-        fontFamily: 'monospace',
-        fontSize: '13px',
-        fontStyle: 'bold',
-        color: '#90caf9',
-        stroke: '#000000',
-        strokeThickness: 3
-      })
-      .setOrigin(0.5);
+    const airDoor = this.add.image(0, rowY, TEX.DOOR_AIR);
+    airDoor.setScale(ab.displayHeight / airDoor.height);
+    airDoor.x = ab.x + ab.displayWidth / 2 + airDoor.displayWidth / 2 + 6;
 
     // ---------------------------------------------------------------------
     // Main menu panel

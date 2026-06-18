@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 130 200" fill="none">
+  <defs>
+    <linearGradient id="flame" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffcf5a"/>
+      <stop offset="0.45" stop-color="#ff7a2e"/>
+      <stop offset="1" stop-color="#e8351b"/>
+    </linearGradient>
+  </defs>
+  <!-- flame head -->
+  <path d="M65 8 C58 40 40 48 36 78 C24 70 22 86 30 96 C20 104 24 122 40 128
+           C44 150 56 160 65 160 C74 160 86 150 90 128 C106 122 110 104 100 96
+           C108 86 106 70 94 78 C90 48 72 40 65 8 Z"
+        fill="url(#flame)" stroke="#7d1a0c" stroke-width="4" stroke-linejoin="round"/>
+  <!-- eyes -->
+  <ellipse cx="52" cy="104" rx="13" ry="16" fill="#ffe06a" stroke="#3a1300" stroke-width="3"/>
+  <ellipse cx="80" cy="104" rx="13" ry="16" fill="#ffe06a" stroke="#3a1300" stroke-width="3"/>
+  <circle cx="52" cy="108" r="4" fill="#1a0a00"/>
+  <circle cx="80" cy="108" r="4" fill="#1a0a00"/>
+  <!-- smile -->
+  <path d="M50 134 Q65 148 82 132" stroke="#2a0d00" stroke-width="5" stroke-linecap="round" fill="none"/>
+  <!-- body -->
+  <path d="M48 160 q17 14 34 0 l-4 30 h-8 v-14 h-10 v14 h-8 Z" fill="#ff5630" stroke="#7d1a0c" stroke-width="4" stroke-linejoin="round"/>
+</svg>

@@ -8,7 +8,6 @@ import earthBtnUrl from './assets/references/earthbtn.png';
 import earthDoorUrl from './assets/references/earthdoor.png';
 import earthgirlSheetUrl from './assets/references/earthgirl-spritesheet.png';
 import gateUrl from './assets/references/gate.png';
-import gemsUrl from './assets/references/gems.png';
 import lavaUrl from './assets/references/lava.png';
 import liftUrl from './assets/references/lift.png';
 import platformUrl from './assets/references/platform.png';
@@ -16,47 +15,44 @@ import specialEarthBtnUrl from './assets/references/specialearthbtn.png';
 import wallUrl from './assets/references/wall.png';
 import windUrl from './assets/references/windgenerator.png';
 
-const steps = [
-  'Choose level',
-  'Control both characters',
-  'Collect matching crystals',
-  'Activate buttons',
-  'Avoid lava',
-  'Use lifts, gates, wind, and pillars',
-  'Reach both doors',
-  'Unlock next level'
-];
+// Слики од играта (вистински скриншоти) и ликовите-инспирација, послужени од /public/slides.
+const FIRE_IMG = '/slides/fire.svg';
+const WATER_IMG = '/slides/water.svg';
 
-const features = [
-  ['2P', 'Local 2-player controls'],
-  ['G', 'Crystal collection'],
-  ['E/A', 'Character-specific collectibles'],
-  ['B', 'Buttons and gates'],
-  ['L', 'Moving platforms'],
-  ['W', 'Wind generators'],
-  ['P', 'Earth pillars'],
-  ['!', 'Lava hazards'],
-  ['3', 'Level unlocking'],
-  ['✓', 'Win screen']
+const steps = [
+  'Избери ниво',
+  'Контролирај ги двата лика',
+  'Собери ги соодветните кристали',
+  'Активирај копчиња',
+  'Избегнувај лава',
+  'Користи лифтови, порти, ветер и столбови',
+  'Стигни до двете врати',
+  'Отклучи го следното ниво'
 ];
 
 const levels = [
-  ['Level 1', 'Earth Gate', 'Introductory cooperative puzzle with a gate and lift mechanic that teaches teamwork.'],
-  ['Level 2', 'Wind Passage', 'Introduces wind generators, air-flow movement, buttons, bridges, and blockers.'],
-  ['Level 3', 'Root Chamber', 'Focuses on Earthgirl, earth pillars, pushable objects, and advanced cooperation.']
+  ['Ниво 1', 'Земјена порта', 'Воведна кооперативна загатка со порта и лифт што учи на тимска работа.'],
+  ['Ниво 2', 'Ветрен премин', 'Воведува ветрогенератори, движење со воздушни струи, копчиња, мостови и пречки.'],
+  ['Ниво 3', 'Коренова одаја', 'Се фокусира на Earthgirl, земјени столбови, подвижни објекти и напредна соработка.']
 ];
 
-const screenshots = ['Main Menu', 'Level 1', 'Level 2', 'Level 3', 'Win Screen'];
+const screenshots = [
+  ['Главно мени', '/slides/menu.png'],
+  ['Ниво 1 — Земјена порта', '/slides/level1.png'],
+  ['Ниво 2 — Ветрен премин', '/slides/level2.png'],
+  ['Ниво 3 — Коренова одаја', '/slides/level3.png'],
+  ['Завршен екран', '/slides/win.png']
+];
 
 const mechanics = [
-  ['Buttons', earthBtnUrl],
-  ['Gates', gateUrl],
-  ['Lifts', liftUrl],
-  ['Wind', windUrl],
-  ['Earth Switches', specialEarthBtnUrl],
-  ['Clouds', cloudUrl],
-  ['Pushable Box', boxUrl],
-  ['Lava', lavaUrl]
+  ['Копчиња', earthBtnUrl],
+  ['Порти', gateUrl],
+  ['Лифтови', liftUrl],
+  ['Ветер', windUrl],
+  ['Земјени прекинувачи', specialEarthBtnUrl],
+  ['Облаци', cloudUrl],
+  ['Подвижна кутија', boxUrl],
+  ['Лава', lavaUrl]
 ];
 
 function card(title, body, className = '') {
@@ -82,7 +78,7 @@ function section(id, label, title, body, content) {
 }
 
 export function renderPresentation() {
-  document.title = 'Earthgirl & Airboy Presentation';
+  document.title = 'Earthgirl & Airboy — Презентација';
   document.body.classList.add('presentation-page');
 
   const root = document.getElementById('game-container');
@@ -97,33 +93,33 @@ export function renderPresentation() {
       <nav class="presentation-nav">
         <a class="brand" href="/">Earthgirl & Airboy</a>
         <div>
-          <a href="#idea">Idea</a>
-          <a href="#levels">Levels</a>
-          <a href="#implementation">Tech</a>
-          <a class="nav-play" href="/">Play Game</a>
+          <a href="#idea">Идеја</a>
+          <a href="#levels">Нивоа</a>
+          <a href="#implementation">Технологија</a>
+          <a class="nav-play" href="/">Играј</a>
         </div>
       </nav>
 
       <header class="hero-section">
         <div class="hero-copy">
-          <p class="eyebrow">Cooperative puzzle platformer</p>
+          <p class="eyebrow">Кооперативен платформер со загатки</p>
           <h1>Earthgirl & Airboy</h1>
-          <p class="subtitle">A 2D cooperative puzzle platformer inspired by Fireboy & Watergirl</p>
+          <p class="subtitle">2Д кооперативен платформер со загатки, инспириран од Fireboy & Watergirl</p>
           <p class="hero-description">
-            Two elemental characters must work together to solve puzzles, collect crystals,
-            avoid hazards, and reach their own exits.
+            Два елементарни лика мора да соработуваат за да решаваат загатки, да собираат
+            кристали, да избегнуваат опасности и да стигнат до своите излези.
           </p>
           <div class="hero-actions">
-            <a class="primary-cta" href="/">Play Game</a>
-            <a class="secondary-cta" href="#flow">View Gameplay Flow</a>
+            <a class="primary-cta" href="/">Играј</a>
+            <a class="secondary-cta" href="#flow">Погледни го текот на играта</a>
           </div>
         </div>
         <div class="hero-showcase">
           <div class="character-orbit earth">
-            <img src="${earthgirlSheetUrl}" alt="Earthgirl sprite sheet preview" />
+            <img src="${earthgirlSheetUrl}" alt="Earthgirl преглед на спрајт" />
           </div>
           <div class="character-orbit air">
-            <img src="${airboySheetUrl}" alt="Airboy sprite sheet preview" />
+            <img src="${airboySheetUrl}" alt="Airboy преглед на спрајт" />
           </div>
           <div class="temple-platform" style="background-image:url('${platformUrl}')"></div>
         </div>
@@ -133,37 +129,36 @@ export function renderPresentation() {
         ${section(
           'idea',
           '01',
-          'Project Idea',
-          'The game is built around local cooperation. One player controls Earthgirl with WASD while the other controls Airboy with the arrow keys. Each character has responsibilities that make teamwork required, not optional.',
+          'Идеја на проектот',
+          'Играта е изградена околу локална соработка. Еден играч ја контролира Earthgirl со WASD, а другиот го контролира Airboy со стрелките. Секој лик има задачи поради кои тимската работа е задолжителна, а не опционална.',
           `<div class="card-grid three">
-            ${card('Local Co-op', 'Two characters are controlled on the same keyboard and must coordinate movement, buttons, and timing.')}
-            ${card('Character Roles', 'Earthgirl and Airboy collect different crystals and interact with different elemental mechanics.')}
-            ${card('Team Goal', 'Levels are solved when both characters reach their own doors after completing the shared puzzle.')}
+            ${card('Локална соработка', 'Двата лика се контролираат на иста тастатура и мора да го координираат движењето, копчињата и тајмингот.')}
+            ${card('Улоги на ликовите', 'Earthgirl и Airboy собираат различни кристали и користат различни елементарни механики.')}
+            ${card('Тимска цел', 'Нивото е решено кога двата лика ќе стигнат до своите врати по решавањето на заедничката загатка.')}
           </div>`
         )}
 
         ${section(
           'inspiration',
           '02',
-          'Inspiration',
-          'Inspired by classic browser puzzle-platform games like Fireboy & Watergirl, redesigned with Earth and Air elements, custom characters, original mechanics, new levels, and a visual direction based on mossy fantasy temples.',
+          'Инспирација',
+          'Инспирирана од класичните прелистувачки игри како Fireboy & Watergirl, редизајнирана со елементите Земја и Воздух, сопствени ликови, оригинални механики, нови нивоа и визуелен стил базиран на мовлести фантастични храмови.',
           `<div class="inspiration-showcase">
             <div class="classic-reference">
               <div class="reference-stage">
-                <span class="fire-avatar">F</span>
-                <span class="water-avatar">W</span>
+                <img class="fire-avatar" src="${FIRE_IMG}" alt="Fireboy" style="object-fit:contain;background:none;box-shadow:none;filter:drop-shadow(0 0 18px rgba(255,120,80,0.55));" />
+                <img class="water-avatar" src="${WATER_IMG}" alt="Watergirl" style="object-fit:contain;background:none;box-shadow:none;filter:drop-shadow(0 0 18px rgba(90,180,255,0.55));" />
                 <div class="reference-platform"></div>
               </div>
-              <p class="reference-label">Reference point: Fireboy & Watergirl style co-op puzzle platforming</p>
-              <p class="reference-note">Use a licensed or professor-approved screenshot here if you want a direct image in the final deck.</p>
+              <p class="reference-label">Појдовна точка: кооперативно решавање загатки во стилот на Fireboy & Watergirl</p>
             </div>
             <div class="new-direction">
-              <h3>What we changed</h3>
+              <h3>Што променивме</h3>
               <ul>
-                <li>Earth and Air instead of Fire and Water</li>
-                <li>Custom character sprite sheets</li>
-                <li>Original temple assets and mechanics</li>
-                <li>New level flow with wind, pillars, boxes, and clouds</li>
+                <li>Земја и Воздух наместо Оган и Вода</li>
+                <li>Сопствени спрајтови за ликовите</li>
+                <li>Оригинални храмски ресурси и механики</li>
+                <li>Нов тек на нивоа со ветер, столбови, кутии и облаци</li>
               </ul>
             </div>
           </div>`
@@ -171,8 +166,8 @@ export function renderPresentation() {
 
         <section class="mechanics-strip reveal">
           <div class="section-heading">
-            <span>Game Systems</span>
-            <h2>Mechanics you can recognize immediately</h2>
+            <span>Игрови системи</span>
+            <h2>Механики што веднаш ги препознавате</h2>
           </div>
           <div class="mechanics-track">
             ${[...mechanics, ...mechanics].map(([name, img]) => `
@@ -187,7 +182,7 @@ export function renderPresentation() {
         ${section(
           'flow',
           '03',
-          'Gameplay Flow',
+          'Тек на играта',
           '',
           `<div class="flow-grid">
             ${steps.map((step, i) => `<div class="flow-step"><span>${i + 1}</span><p>${step}</p></div>`).join('')}
@@ -197,18 +192,18 @@ export function renderPresentation() {
         ${section(
           'characters',
           '04',
-          'Characters',
+          'Ликови',
           '',
           `<div class="character-grid">
             <article class="character-card earth-card">
-              <div class="sprite-strip"><img src="${earthgirlSheetUrl}" alt="Earthgirl poses" /></div>
+              <div class="sprite-strip"><img src="${earthgirlSheetUrl}" alt="Earthgirl пози" /></div>
               <h3>Earthgirl</h3>
-              <p>Green and nature themed. She collects green crystals, activates earth buttons, and uses earth mechanics such as pillars and lifts.</p>
+              <p>Зелена и инспирирана од природата. Собира зелени кристали, активира земјени копчиња и користи земјени механики како столбови и лифтови.</p>
             </article>
             <article class="character-card air-card">
-              <div class="sprite-strip"><img src="${airboySheetUrl}" alt="Airboy poses" /></div>
+              <div class="sprite-strip"><img src="${airboySheetUrl}" alt="Airboy пози" /></div>
               <h3>Airboy</h3>
-              <p>Blue and air themed. He collects blue crystals, activates air buttons, and uses wind generators and air-flow mechanics.</p>
+              <p>Син и инспириран од воздухот. Собира сини кристали, активира воздушни копчиња и користи ветрогенератори и воздушни механики.</p>
             </article>
           </div>`
         )}
@@ -216,7 +211,7 @@ export function renderPresentation() {
         ${section(
           'levels',
           '05',
-          'Levels',
+          'Нивоа',
           '',
           `<div class="card-grid three">
             ${levels.map(([tag, title, text]) => `
@@ -225,7 +220,7 @@ export function renderPresentation() {
                 <h3>${title}</h3>
                 <p>${text}</p>
                 <div class="level-visual">
-                  <img src="${tag === 'Level 1' ? gateUrl : tag === 'Level 2' ? windUrl : boxUrl}" alt="" />
+                  <img src="${tag === 'Ниво 1' ? gateUrl : tag === 'Ниво 2' ? windUrl : boxUrl}" alt="" />
                 </div>
               </article>
             `).join('')}
@@ -235,59 +230,49 @@ export function renderPresentation() {
         ${section(
           'implementation',
           '06',
-          'Implementation',
-          'Earthgirl & Airboy is implemented in JavaScript with Phaser. The code uses a scene-based structure, reusable entities, custom assets, Arcade physics, collision handling, and level-specific puzzle logic separated from shared gameplay behavior.',
+          'Имплементација',
+          'Earthgirl & Airboy е изработена во JavaScript со Phaser. Кодот користи структура базирана на сцени, повеќекратно употребливи ентитети, сопствени ресурси, Arcade физика, обработка на колизии и логика за загатки специфична за нивото, одделена од заедничкото однесување.',
           `<div class="implementation-grid">
-            ${['BaseLevelScene', 'Level scenes', 'Player entities', 'Buttons', 'Gates', 'Crystals', 'Doors', 'Hazards'].map((item) => `<span>${item}</span>`).join('')}
+            ${['BaseLevelScene', 'Сцени на нивоа', 'Ентитети на играчи', 'Копчиња', 'Порти', 'Кристали', 'Врати', 'Опасности'].map((item) => `<span>${item}</span>`).join('')}
           </div>`
         )}
 
         ${section(
           'screenshots',
           '07',
-          'Screenshots',
-          'Placeholder frames are ready to replace with real gameplay screenshots later.',
+          'Слики од играта',
+          '',
           `<div class="screenshot-grid">
-            ${screenshots.map((shot, i) => `
+            ${screenshots.map(([label, src]) => `
               <figure class="screenshot-card">
-                <div class="shot-art ${i % 2 ? 'air-shot' : 'earth-shot'}">
-                  <span class="shot-label">${shot}</span>
-                  <img src="${i === 4 ? gemsUrl : i === 2 ? windUrl : i === 3 ? lavaUrl : platformUrl}" alt="" />
+                <div class="shot-art">
+                  <span class="shot-label">${label}</span>
+                  <img src="${src}" alt="${label}" style="width:100%;height:100%;object-fit:cover;opacity:1;border-radius:0;transform:none;" />
                 </div>
-                <figcaption>${shot}</figcaption>
+                <figcaption>${label}</figcaption>
               </figure>
             `).join('')}
           </div>`
         )}
 
         ${section(
-          'features',
-          '08',
-          'Features',
-          '',
-          `<div class="feature-grid">
-            ${features.map(([icon, text]) => `<div class="feature-card"><span>${icon}</span><p>${text}</p></div>`).join('')}
-          </div>`
-        )}
-
-        ${section(
           'controls',
-          '09',
-          'Controls',
+          '08',
+          'Контроли',
           '',
           `<div class="controls-grid">
-            <div class="control-panel earth-panel"><h3>Earthgirl</h3><p><kbd>A</kbd> left <kbd>D</kbd> right <kbd>W</kbd> jump</p></div>
-            <div class="control-panel air-panel"><h3>Airboy</h3><p><kbd>←</kbd> left <kbd>→</kbd> right <kbd>↑</kbd> jump</p></div>
-            <div class="control-panel"><h3>Other</h3><p><kbd>R</kbd> restart level <kbd>Esc</kbd> return to menu</p></div>
+            <div class="control-panel earth-panel"><h3>Earthgirl</h3><p><kbd>A</kbd> лево <kbd>D</kbd> десно <kbd>W</kbd> скок</p></div>
+            <div class="control-panel air-panel"><h3>Airboy</h3><p><kbd>←</kbd> лево <kbd>→</kbd> десно <kbd>↑</kbd> скок</p></div>
+            <div class="control-panel"><h3>Друго</h3><p><kbd>R</kbd> рестартирај ниво <kbd>Esc</kbd> назад во мени</p></div>
           </div>`
         )}
 
         <section class="conclusion-section">
           <img src="${earthDoorUrl}" alt="" />
           <div>
-            <h2>Conclusion</h2>
-            <p>Earthgirl & Airboy demonstrates cooperative puzzle design, reusable game architecture, custom visual assets, and progressive level mechanics.</p>
-            <a class="primary-cta" href="/">Play Game</a>
+            <h2>Заклучок</h2>
+            <p>Earthgirl & Airboy демонстрира кооперативен дизајн на загатки, повеќекратно употреблива архитектура, сопствени визуелни ресурси и прогресивни механики на нивоа.</p>
+            <a class="primary-cta" href="/">Играј</a>
           </div>
           <img src="${airDoorUrl}" alt="" />
         </section>
@@ -295,7 +280,7 @@ export function renderPresentation() {
     </div>
   `;
 
-  const revealItems = root.querySelectorAll('.reveal, .presentation-card, .level-card, .feature-card, .screenshot-card, .flow-step');
+  const revealItems = root.querySelectorAll('.reveal, .presentation-card, .level-card, .screenshot-card, .flow-step');
   const observer = new IntersectionObserver(
     (entries) => {
       entries.forEach((entry) => {

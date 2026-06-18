@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 130 200" fill="none">
+  <defs>
+    <linearGradient id="water" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#8fe1ff"/>
+      <stop offset="0.5" stop-color="#34b3ff"/>
+      <stop offset="1" stop-color="#1f7fe0"/>
+    </linearGradient>
+  </defs>
+  <!-- droplet head -->
+  <path d="M65 18 C52 56 30 78 30 110 C30 140 46 160 65 160 C84 160 100 140 100 110
+           C100 78 78 56 65 18 Z"
+        fill="url(#water)" stroke="#0c4a8a" stroke-width="4" stroke-linejoin="round"/>
+  <!-- shine -->
+  <ellipse cx="48" cy="92" rx="9" ry="16" fill="#cdeeff" opacity="0.8"/>
+  <!-- eyes -->
+  <ellipse cx="52" cy="108" rx="12" ry="15" fill="#d9fbff" stroke="#0c2f55" stroke-width="3"/>
+  <ellipse cx="80" cy="108" rx="12" ry="15" fill="#d9fbff" stroke="#0c2f55" stroke-width="3"/>
+  <circle cx="52" cy="112" r="4" fill="#06243f"/>
+  <circle cx="80" cy="112" r="4" fill="#06243f"/>
+  <!-- smile -->
+  <path d="M50 134 Q65 148 82 132" stroke="#06243f" stroke-width="5" stroke-linecap="round" fill="none"/>
+  <!-- body -->
+  <path d="M48 160 q17 14 34 0 l-4 30 h-8 v-14 h-10 v14 h-8 Z" fill="#2ea7f0" stroke="#0c4a8a" stroke-width="4" stroke-linejoin="round"/>
+</svg>

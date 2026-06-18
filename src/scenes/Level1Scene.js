@@ -44,13 +44,13 @@ export default class Level1Scene extends BaseLevelScene {
 
     // --- Static geometry ---------------------------------------------------
     // The floor is split by a small danger pit in the middle. Surface y ≈ 500.
-    this.addPlatform(180, 520, 360, 40, TEX.GROUND); // left floor:  x 0 … 360
-    this.addPlatform(690, 520, 540, 40, TEX.GROUND); // right floor: x 420 … 960
+    this.addPlatform(175, 520, 350, 40, TEX.GROUND); // left floor:  x 0 … 350
+    this.addPlatform(695, 520, 530, 40, TEX.GROUND); // right floor: x 430 … 960
 
-    // The pit is lava in a 60px-wide gap (x 360 … 420). Falling in
+    // The pit is lava in an 80px-wide gap (x 350 … 430). Falling in
     // respawns ONLY the character who fell — the other player keeps playing.
     // Surface sits at the floor line (y ≈ 500).
-    this.addPitLava(390, 532, 60, 64);
+    this.addPitLava(390, 532, 80, 64);
 
     // Earthgirl's high exit ledge (left). Only reachable via the lift.
     this.addPlatform(110, 190, 190, 24); // left 15 … right 205, top 178
