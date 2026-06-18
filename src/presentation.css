@@ -792,3 +792,184 @@ kbd {
     display: none;
   }
 }
+
+/* =========================================================================
+   Slide 1 — VS battle card (two character faces split by a diagonal line)
+   ========================================================================= */
+.vs-card {
+  position: relative;
+  width: 100%;
+  max-width: 520px;
+  margin-left: auto;
+  aspect-ratio: 16 / 11;
+  border-radius: 16px;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  box-shadow: 0 26px 80px rgba(0, 0, 0, 0.55);
+}
+
+.vs-half {
+  position: absolute;
+  inset: 0;
+  background-size: auto 92%;
+  background-repeat: no-repeat;
+}
+
+.vs-left {
+  clip-path: polygon(0 0, 58% 0, 42% 100%, 0 100%);
+  background-position: 28% center;
+  background-color: #eaf7df;
+}
+
+.vs-right {
+  clip-path: polygon(58% 0, 100% 0, 100% 100%, 42% 100%);
+  background-position: 74% center;
+  background-color: #0c1f3a;
+}
+
+.vs-half::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+}
+.vs-left::after { background: linear-gradient(120deg, rgba(123, 227, 95, 0.22), transparent 62%); }
+.vs-right::after { background: linear-gradient(240deg, rgba(64, 169, 255, 0.28), transparent 62%); }
+
+.vs-line {
+  position: absolute;
+  top: -8%;
+  bottom: -8%;
+  left: 50%;
+  width: 6px;
+  transform: translateX(-50%) skewX(-18deg);
+  background: linear-gradient(#ffffff, #dfeefc);
+  box-shadow: 0 0 24px rgba(255, 255, 255, 0.85);
+  z-index: 2;
+}
+
+.vs-badge {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 58px;
+  height: 58px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  z-index: 3;
+  font-weight: 1000;
+  font-size: 21px;
+  color: #0b0f1a;
+  background: linear-gradient(#ffffff, #c9d6e6);
+  border: 3px solid #0b0f1a;
+  box-shadow: 0 6px 22px rgba(0, 0, 0, 0.55);
+}
+
+.vs-name {
+  position: absolute;
+  bottom: 12px;
+  z-index: 3;
+  font-weight: 900;
+  font-size: 13px;
+  letter-spacing: 0.4px;
+  color: #fff;
+  text-shadow: 0 2px 6px rgba(0, 0, 0, 0.85);
+}
+.vs-name-left { left: 16px; }
+.vs-name-right { right: 16px; }
+
+/* =========================================================================
+   Idea slide — Fireboy & Watergirl inspiration banner
+   ========================================================================= */
+.inspo-banner {
+  margin-top: 22px;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 16px 22px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: linear-gradient(120deg, rgba(255, 89, 64, 0.12), rgba(64, 169, 255, 0.14));
+}
+.inspo-pair {
+  display: flex;
+  gap: 6px;
+  flex: 0 0 auto;
+}
+.inspo-pair img {
+  height: 72px;
+  width: auto;
+  filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.45));
+}
+.inspo-banner p {
+  margin: 0;
+  color: var(--text);
+  font-weight: 700;
+}
+
+/* =========================================================================
+   Visual polish (same content, nicer look)
+   ========================================================================= */
+.section-heading span {
+  display: inline-block;
+  padding: 5px 12px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, rgba(123, 227, 95, 0.2), rgba(121, 204, 255, 0.2));
+  border: 1px solid var(--line);
+  color: var(--gold);
+  letter-spacing: 1px;
+}
+
+.section-heading h2,
+.conclusion-section h2 {
+  background: linear-gradient(120deg, var(--earth), var(--air));
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.section-heading h2::after {
+  content: "";
+  display: block;
+  width: 64px;
+  height: 4px;
+  margin-top: 14px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--earth), var(--air));
+}
+
+/* Lift + accent on every card-like surface */
+.presentation-card,
+.level-card,
+.character-card,
+.control-panel,
+.feature-card,
+.screenshot-card {
+  position: relative;
+  transition: transform 220ms ease, box-shadow 220ms ease, border-color 220ms ease;
+}
+.presentation-card:hover,
+.level-card:hover,
+.character-card:hover,
+.control-panel:hover,
+.screenshot-card:hover {
+  transform: translateY(-6px);
+  border-color: color-mix(in srgb, var(--earth), var(--air) 50%);
+  box-shadow: 0 28px 70px rgba(0, 0, 0, 0.4);
+}
+
+/* Numbered flow steps get a gradient chip */
+.flow-step span {
+  background: linear-gradient(135deg, var(--earth), var(--air));
+  color: #07140a;
+}
+
+/* Tech chips */
+.implementation-grid span {
+  transition: transform 200ms ease, border-color 200ms ease;
+}
+.implementation-grid span:hover {
+  transform: translateY(-4px);
+  border-color: color-mix(in srgb, var(--earth), var(--air) 50%);
+}
